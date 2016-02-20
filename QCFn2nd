@@ -29,7 +29,7 @@ def ij(I,C,c):
     i=I+(c-C[k])//2
     return i,j
     
-def emap(xmap,ymap,r,c):
+def createEmap(xmap,ymap,r,c):
     emap=[]
     for i in range(0,len(xmap)):
         a=xmap[i]
@@ -223,7 +223,6 @@ def genMatrix5(i,j,emap,C,c,sparseflag):
                 else:
                     R[k] = 0
         M.append(R)
-    
     M = np.array(M)
     # Add zeroes
     for k in range(0,len(emap)):
