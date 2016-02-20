@@ -12,7 +12,7 @@ from scipy import sparse
 import matplotlib.pyplot as plt
 import scipy.constants as sc
 import scipy.integrate
-import twoDQCfunctions as qcf
+import QCFn2nd as qcf
 #from scipy.sparse import linalg
 
 """ 
@@ -22,7 +22,9 @@ import twoDQCfunctions as qcf
  |4 5 6|
  |_____|
 """
-c =21#int(input("Enter number of points in x axis: "))
+Sparseflag = True
+m = 3
+c =3**m#int(input("Enter number of points in x axis: "))
 r = c#int(input("Enter number points in y axis: "))
 a = 1#float(input("Enter width (x axis) of well: "))
 b=a#float(input("Enter depth (y axis) of well: "))
@@ -51,17 +53,19 @@ C,xmap,ymap=qcf.CreateMap5(r,c)
 #    C.append(col_count) 
     
 # Create emap
-emap = qcf.emap(xmap,ymap,r,c)
+emap = qcf.createEmap(xmap,ymap,r,c)
 #print(emap)
 
 qcf.plotMap(xmap,ymap)
 
-W=qcf.genMatrix5(xmap,ymap,emap,C,c,True)
+W=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
 #print(W)
 
-#w, v = linalg.eig(W)
-k = 10
-w, v = sparse.linalg.eigsh(W,k,which='SM')
+if Sparseflag == False:
+    w, v = linalg.eig(W)
+if Sparseflag == True:
+    k = 15
+    w, v = sparse.linalg.eigsh(W,k,which='SM')
 
 # enumerate list and sort by eigenvalues, return index of relevant energy level
 # here m labels mth energy level (in sorted list of energies)
