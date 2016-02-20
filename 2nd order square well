@@ -1,0 +1,94 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 30 17:35:32 2015
+
+2D infinite potential wells
+@author: Dan Goldsmith & Dan Locke
+"""
+import numpy as np
+import scipy as sp
+from numpy import linalg
+from scipy import sparse
+import matplotlib.pyplot as plt
+import scipy.constants as sc
+import scipy.integrate
+import twoDQCfunctions as qcf
+#from scipy.sparse import linalg
+
+""" 
+2D well labelled in following pattern:
+  _____
+ |1 2 3|
+ |4 5 6|
+ |_____|
+"""
+c =21#int(input("Enter number of points in x axis: "))
+r = c#int(input("Enter number points in y axis: "))
+a = 1#float(input("Enter width (x axis) of well: "))
+b=a#float(input("Enter depth (y axis) of well: "))
+x=a*c # spacing in x axis
+y=b*r # spacing in y axis
+#n = r*c # only used for energies
+xt = np.linspace(0,x,c+2)
+yt = np.linspace(0,y,r+2)
+X, Y = np.meshgrid(xt, yt)
+xmap=[]
+ymap=[]
+C=[]
+emap=[]
+    
+C,xmap,ymap=qcf.CreateMap5(r,c)
+   
+#for i in range(1,r+1):
+#    col_count = 0
+#    for j in range(1,c+1):
+#        if (i==1 and j==1) or (i==2 and j==1) or (i==1 and j==2) or (i==c and j==1) or (i==c-1 and j==1) or (i==c and j==2) or (i==1 and j==r) or (i==1 and j==r-1) or (i==2 and j==r) or (i==c and j==r) or (i==c-1 and j==r) or (i==c and j==r-1):
+#            z=1# do nothing   
+#        else:
+#            ymap.append(j)
+#            xmap.append(i)
+#            col_count=col_count+1
+#    C.append(col_count) 
+    
+# Create emap
+emap = qcf.emap(xmap,ymap,r,c)
+#print(emap)
+
+qcf.plotMap(xmap,ymap)
+
+W=qcf.genMatrix5(xmap,ymap,emap,C,c,True)
+#print(W)
+
+#w, v = linalg.eig(W)
+k = 10
+w, v = sparse.linalg.eigsh(W,k,which='SM')
+
+# enumerate list and sort by eigenvalues, return index of relevant energy level
+# here m labels mth energy level (in sorted list of energies)
+for m in range(0,1):
+    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+    z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
+    qcf.plotContour(X,Y,z,m,'5p')
+    qcf.plot2Dpsi(X,Y,z)
+    
+
+# state_x = 1#int(input("Enter energy state in x (GS=1): "))
+# state_y = 1#int(input("Enter energy state in y (GS=1): "))
+
+# # Energy
+# En = (w[state_ind]/2)
+# print('Energy is', En)
+# # Analytical solution (normalised)
+# ans_E = (( (state_x*np.pi*b/c)**2+(state_y*np.pi*a/r)**2 )*0.5 )
+# print('Ansatz energy is', ans_E)
+
+# Et = []
+# for i in range(1,c+1):
+#     for j in range(1,r+1):
+#         Et.append(( (i*np.pi*b/c)**2+(j*np.pi*a/r)**2 )*0.5 )
+        
+# nt = np.linspace(1,n,n)
+# E = sorted(w/2)
+# Et = sorted(Et)
+# qcf.plotEnergies(nt, E, Et)
+# qcf.plotEnergies(nt, ans_E,Et)
