@@ -46,7 +46,6 @@ def createEmap(xmap,ymap,r,c,C,xymap):
         emap.append(emap_t)
         
         if xymap[A][B-(c-C[A])//2]==0:
-            print("here")
             if xymap[A][B-2]==1 and xymap[A][B-1]==1: emap_t.append(1)
             if xymap[A-2][B]==1 and xymap[A-1][B]==1: emap_t.append(2)
             if xymap[A+2][B]==1 and xymap[A+1][B]==1: emap_t.append(3)
@@ -138,46 +137,6 @@ def CreateMap5(r,c,iterations,xymap):
                 
         C.append(col_count)
     return C,xmap,ymap,xymap
-    
-def genMatrix(i,j):
-    M = []
-    for marker in range(0,len(i)):
-        R=[None]*len(i)
-        for k in range(0, len(i)):
-            if marker == 0:
-                if k == marker:
-                    R[k] = 4.
-                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
-                    R[k] = -1
-                elif (i[k] == i[marker] and j[k] == j[marker]+1):
-                    R[k] = -1
-                else:
-                    R[k] = 0                    
-            elif marker == (len(i)-1):
-                if k == marker:
-                    R[k] = 4
-                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
-                    R[k] = -1        
-                elif (i[k] == i[marker] and j[k] == j[marker]-1):
-                    R[k] = -1
-                else:
-                    R[k] = 0                    
-            else:
-                if k == marker:
-                    R[k] = 4
-                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
-                    R[k] = -1
-                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
-                    R[k] = -1
-                elif (i[k] == i[marker] and j[k] == j[marker]+1):
-                    R[k] = -1
-                elif (i[k] == i[marker] and j[k] == j[marker]-1):
-                    R[k] = -1
-                else:
-                    R[k] = 0
-        M.append(R)
-    M = np.array(M)
-    return M
 
 def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag): 
     M = []
@@ -233,7 +192,7 @@ def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag):
                     R[k] = 0
         M.append(R)
     M = np.array(M)
-    # Add zeroes - does this inc. points in centre ?????
+    # Add zeroes - inc. points in centre
     for k in range(0,len(emap)):
         for n in range(0,len(emap[k])):
             if emap[k][n] != 0:
@@ -246,7 +205,6 @@ def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag):
         i,j=ij(k,C,c)
         a=ymap[k]-1
         b=xmap[k]-1-(c-C[a])//2 
-        print(k,i,j,a,b,emap[k])
         if 1 in emap[k]: M[I(i,j-2,C,c)-1,k]=-4
         if 2 in emap[k]: M[I(i-2,j,C,c)-1,k]=-4
         if 3 in emap[k]: M[I(i+2,j,C,c)-1,k]=-4
@@ -268,20 +226,10 @@ def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag):
         except IndexError: print("Caught error")
         else: 
             if s==0: M[I(i,j-2,C,c)-1,k]=0
-    if sparseflag == 1: M = sparse.csr_matrix(M)
+    if sparseflag == 1: 
+        M = M.tolist()        
+        M = sparse.csr_matrix(M)
     return M
-        
-def arrayFromZ(v, c, r):
-    # Reshape the eigenvector
-    z = v.reshape((r,c))
-    # Add in boundary conditions
-    z = np.insert(z,0,0, axis=1)
-    z = np.insert(z,c+1,0, axis=1)
-    z = np.insert(z, 0,0,axis=0)
-    zero = np.zeros((1,c+2))
-    z = np.append(z,zero, axis=0 )
-    z = z*z
-    return z
     
 def arrayFromZ5(v, c, r, C, xt, yt, xymap):
     z=[None]*r        
@@ -289,12 +237,10 @@ def arrayFromZ5(v, c, r, C, xt, yt, xymap):
     for i in range(0,len(C)):
         v_t = np.zeros(C[i])
         for k in range(0,C[i]):
-            print(xymap[i][k])
             if xymap[i][k] == 1:
                 v_t[k] = v[j]
             j+=1
-        z[i] = (v_t)
-        print(z[i],C[i])       
+        z[i] = (v_t)      
     z = np.array(z)
     zero = np.zeros(((r+2), (c+2)))
     for i in range(0,r):
@@ -307,7 +253,9 @@ def arrayFromZ5(v, c, r, C, xt, yt, xymap):
     I = sp.integrate.simps(Ix, x=yt)
     z=z/I
     return z
-    
+            
+############################## PLOTTING #######################################
+        
 def masking(c,r,z):
         for i in range(1,c+1):
             for j in range(1,c+1):
@@ -330,8 +278,6 @@ def plotContourSP(X,Y,z,m,r,c,iterations_label):
         plt.ylabel('$y$',fontsize=plottextsize+12)
         plt.show()
         fig.savefig('Contour_%i_%s_%s.png' %(m, r,iterations_label))
-        
-#############################################################################
     
 def plotMap(xmap,ymap):
     fig = plt.figure(figsize=(15,15))
@@ -345,7 +291,7 @@ def plotMap(xmap,ymap):
     fig.savefig('Map.png')
 
 def plot2Dpsi(X,Y,z):
-    fig = plt.figure(figsize=(10,8))
+    fig = plt.figure(figsize=(15,12))
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(X,Y,z, cmap=cm.coolwarm, cstride=1, rstride=1)
     fig.colorbar(surf)
@@ -355,16 +301,6 @@ def plot2Dpsi(X,Y,z):
     plt.legend()
     plt.show()
     fig.savefig('2Dwell.png')
-    
-def plotContour(X,Y,z, m,s):
-    fig = plt.figure(figsize=(15,15))
-    plt.contourf(X, Y, z, 100, cmap=cm.gist_rainbow)
-    plt.title('%s - Contour plot for %ith energy' %(s,m), fontsize=14)
-    plt.xlabel('$x$',fontsize=20)
-    plt.ylabel('$y$',fontsize=20)
-    #plt.colorbar()
-    plt.show()
-    fig.savefig('Contour_%i_%s.png' %(m,s))
     
 def plotEnergies(nt, E, Et):
     fig2 = plt.figure(figsize=(15,10))
