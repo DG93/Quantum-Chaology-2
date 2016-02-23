@@ -1,0 +1,378 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Oct 13 14:03:57 2015
+
+@author: mbyx9dl2
+"""
+import numpy as np
+import scipy as sp
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from scipy import sparse
+from mpl_toolkits.mplot3d import Axes3D
+    
+def I(i,j,C,c):
+    I = 0
+    l = 0
+    for k in range(0,j-1):
+        I=I+C[k]
+        l=k+1
+    I=I+i-(c-C[l])//2
+    return I
+    
+def ij(I,C,c):
+    k=0
+    while I-C[k]>=0:
+        I=I-C[k]
+        k=k+1
+    j=k+1
+    i=I+1+(c-C[k])//2
+    return i,j
+    
+def createEmap(xmap,ymap,r,c,C,xymap):
+    emap=[]
+    for i in range(0,len(xmap)):        
+        emap_t=[]        
+        a=xmap[i]
+        b=ymap[i]
+        A=a-1
+        B=b-1
+        if a==c or b==r or b==1 or a==1:
+            if a==c: emap_t.append(1)
+            if b==r: emap_t.append(2)
+            if b==1: emap_t.append(3)
+            if a==1: emap_t.append(4)
+        else: emap_t.append(0)
+        emap.append(emap_t)
+        
+        if xymap[A][B-(c-C[A])//2]==0:
+            print("here")
+            if xymap[A][B-2]==1 and xymap[A][B-1]==1: emap_t.append(1)
+            if xymap[A-2][B]==1 and xymap[A-1][B]==1: emap_t.append(2)
+            if xymap[A+2][B]==1 and xymap[A+1][B]==1: emap_t.append(3)
+            if xymap[A][B+2]==1 and xymap[A][B+1]==1: emap_t.append(4)
+        else: emap_t.append(0)
+    return emap
+    
+def inside(i, j, iterations):
+        x = j-1
+        y = i-1
+        iter_t = 1
+        while(x>0 or y>0):
+            if(x%3==1 and y%3==1):
+                if iter_t > -iterations: 
+                    return 0
+            x = x // 3
+            y = y // 3
+            iter_t = iter_t + 1
+        return 1
+    
+def CreateMap5(r,c,iterations,xymap):
+    xmap=[]
+    ymap=[]
+    C=[]
+    t=[]
+    t1=[]
+    t1.append(1)
+    t1.append(1)
+    t.append(t1)
+    t2=[]
+    t2.append(2)
+    t2.append(1)
+    t.append(t2)
+    t3=[]
+    t3.append(1)
+    t3.append(2)
+    t.append(t3)
+    t4=[]
+    t4.append(c)
+    t4.append(1)
+    t.append(t4)
+    t5=[]
+    t5.append(c-1)
+    t5.append(1)
+    t.append(t5)
+    t6=[]
+    t6.append(c)
+    t6.append(2)
+    t.append(t6)
+    t7=[]
+    t7.append(1)
+    t7.append(r)
+    t.append(t7)
+    t8=[]
+    t8.append(1)
+    t8.append(r-1)
+    t.append(t8)
+    t9=[]
+    t9.append(2)
+    t9.append(r)
+    t.append(t9)
+    t10=[]
+    t10.append(c)
+    t10.append(r)
+    t.append(t10)
+    t11=[]
+    t11.append(c-1)
+    t11.append(r)
+    t.append(t11)
+    t12=[]
+    t12.append(c)
+    t12.append(r-1)
+    t.append(t12)
+    for i in range(1,r+1):
+        col_count = 0
+        xymap_t=[]
+        for j in range(1,c+1):
+            test=[]
+            test.append(i)
+            test.append(j)
+            if test not in t:
+                if inside(i,j,iterations) == 1: 
+                    xymap_t.append(1)
+                else: xymap_t.append(0)
+                ymap.append(j)
+                xmap.append(i)
+                col_count=col_count+1
+        xymap.append(xymap_t)  
+                
+        C.append(col_count)
+    return C,xmap,ymap,xymap
+    
+def genMatrix(i,j):
+    M = []
+    for marker in range(0,len(i)):
+        R=[None]*len(i)
+        for k in range(0, len(i)):
+            if marker == 0:
+                if k == marker:
+                    R[k] = 4.
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] = -1
+                else:
+                    R[k] = 0                    
+            elif marker == (len(i)-1):
+                if k == marker:
+                    R[k] = 4
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] = -1        
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] = -1
+                else:
+                    R[k] = 0                    
+            else:
+                if k == marker:
+                    R[k] = 4
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] = -1
+                else:
+                    R[k] = 0
+        M.append(R)
+    M = np.array(M)
+    return M
+
+def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag): 
+    M = []
+    for marker in range(0,len(i)):
+        R=[None]*len(i)
+        for k in range(0, len(i)):
+            if marker == 0:
+                if k == marker:
+                    R[k] = 4.
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] = -1
+                elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                    R[k] = -1
+                else:
+                    R[k] = 0                    
+            elif marker == (len(i)-1):
+                if k == marker:
+                    R[k] = 4
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] = -1        
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] = -1
+                elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                    R[k] = -1        
+                elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                    R[k] = -1
+                else:
+                    R[k] = 0                    
+            else:
+                if k == marker:
+                    R[k] = 4
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] = -1
+                elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                    R[k] = -1
+                else:
+                    R[k] = 0
+        M.append(R)
+    M = np.array(M)
+    # Add zeroes - does this inc. points in centre ?????
+    for k in range(0,len(emap)):
+        for n in range(0,len(emap[k])):
+            if emap[k][n] != 0:
+                for l in range(0,len(emap)): 
+                    M[k,l] = 0
+                    M[l,k] = 0
+                n=len(emap[k])
+    # Add -4's
+    for k in range(0,len(emap)):
+        i,j=ij(k,C,c)
+        a=ymap[k]-1
+        b=xmap[k]-1-(c-C[a])//2 
+        print(k,i,j,a,b,emap[k])
+        if 1 in emap[k]: M[I(i,j-2,C,c)-1,k]=-4
+        if 2 in emap[k]: M[I(i-2,j,C,c)-1,k]=-4
+        if 3 in emap[k]: M[I(i+2,j,C,c)-1,k]=-4
+        if 4 in emap[k]: M[I(i,j+2,C,c)-1,k]=-4
+    # Set points thru boundaries to zero
+        try: s=xymap[a+1][b]
+        except IndexError: print("Caught error")
+        else: 
+            if s==0: M[I(i+2,j,C,c)-1,k]=0
+        try: s=xymap[a-1][b]
+        except IndexError: print("Caught error")
+        else: 
+            if s==0: M[I(i-2,j,C,c)-1,k]=0
+        try: s=xymap[a][b+1]
+        except IndexError: print("Caught error")
+        else: 
+            if s==0: M[I(i,j+2,C,c)-1,k]=0
+        try: s=xymap[a][b-1]
+        except IndexError: print("Caught error")
+        else: 
+            if s==0: M[I(i,j-2,C,c)-1,k]=0
+    if sparseflag == 1: M = sparse.csr_matrix(M)
+    return M
+        
+def arrayFromZ(v, c, r):
+    # Reshape the eigenvector
+    z = v.reshape((r,c))
+    # Add in boundary conditions
+    z = np.insert(z,0,0, axis=1)
+    z = np.insert(z,c+1,0, axis=1)
+    z = np.insert(z, 0,0,axis=0)
+    zero = np.zeros((1,c+2))
+    z = np.append(z,zero, axis=0 )
+    z = z*z
+    return z
+    
+def arrayFromZ5(v, c, r, C, xt, yt, xymap):
+    z=[None]*r        
+    j=0
+    for i in range(0,len(C)):
+        v_t = np.zeros(C[i])
+        for k in range(0,C[i]):
+            print(xymap[i][k])
+            if xymap[i][k] == 1:
+                v_t[k] = v[j]
+            j+=1
+        z[i] = (v_t)
+        print(z[i],C[i])       
+    z = np.array(z)
+    zero = np.zeros(((r+2), (c+2)))
+    for i in range(0,r):
+        for j in range(0,C[i]):
+            np.put(zero[i+1], [(c+2-C[i])/2+j], z[i][j])
+    z = zero*zero
+    Ix=[]
+    for i in range(0,r+2):
+        Ix.append(sp.integrate.simps(z[i,:], x=xt))    
+    I = sp.integrate.simps(Ix, x=yt)
+    z=z/I
+    return z
+    
+def masking(c,r,z):
+        for i in range(1,c+1):
+            for j in range(1,c+1):
+                if z[i][j]==0:
+                    if z[i+1][j]==0 and z[i-1][j]==0 and z[i][j-1]==0 and z[i][j+1]==0:
+                        z[i][j] = np.nan
+        return z   
+        
+def plotContourSP(X,Y,z,m,r,c,iterations_label):
+        plottextsize = 24
+        fig = plt.figure(figsize=(15,15))
+        z = masking(c,r,z)
+        no_bins = 500
+        lev = np.linspace(0,np.nanmax(z),no_bins)
+        plt.gca().patch.set_color('.25')
+        my_cmap = plt.cm.get_cmap('gist_rainbow')
+        plt.contourf(X, Y, z, levels = lev , cmap=my_cmap)
+        plt.title('Contour plot for %ith energy' %m, fontsize=plottextsize+10)
+        plt.xlabel('$x$',fontsize=plottextsize+12)
+        plt.ylabel('$y$',fontsize=plottextsize+12)
+        plt.show()
+        fig.savefig('Contour_%i_%s_%s.png' %(m, r,iterations_label))
+        
+#############################################################################
+    
+def plotMap(xmap,ymap):
+    fig = plt.figure(figsize=(15,15))
+    plt.plot(xmap, ymap, 'ro')
+    plt.title('Points', fontsize=30)
+    plt.xlabel('$x$',fontsize=20)
+    plt.ylabel('$y$',fontsize=20)
+    plt.xlim(0,max(xmap)+1)
+    plt.ylim(0,max(ymap)+1)
+    plt.show()
+    fig.savefig('Map.png')
+
+def plot2Dpsi(X,Y,z):
+    fig = plt.figure(figsize=(10,8))
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(X,Y,z, cmap=cm.coolwarm, cstride=1, rstride=1)
+    fig.colorbar(surf)
+    plt.xlabel('$x_i$',fontsize=20)
+    plt.ylabel('$y_i$',fontsize=20)
+    ax.set_zlabel('$|\psi|^2$',fontsize=20)
+    plt.legend()
+    plt.show()
+    fig.savefig('2Dwell.png')
+    
+def plotContour(X,Y,z, m,s):
+    fig = plt.figure(figsize=(15,15))
+    plt.contourf(X, Y, z, 100, cmap=cm.gist_rainbow)
+    plt.title('%s - Contour plot for %ith energy' %(s,m), fontsize=14)
+    plt.xlabel('$x$',fontsize=20)
+    plt.ylabel('$y$',fontsize=20)
+    #plt.colorbar()
+    plt.show()
+    fig.savefig('Contour_%i_%s.png' %(m,s))
+    
+def plotEnergies(nt, E, Et):
+    fig2 = plt.figure(figsize=(15,10))
+    plt.plot(nt, E, label='Numeric')
+    plt.plot(nt,Et, label='Analytic')
+    plt.title('Energy vs n', fontsize=30)
+    plt.xlabel('$n$',fontsize=20)
+    plt.ylabel('$Energy$',fontsize=20)
+    plt.legend()
+    plt.show()
+    fig2.savefig('2D_E_vs_n.png')
