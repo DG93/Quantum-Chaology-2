@@ -13,23 +13,15 @@ import matplotlib.pyplot as plt
 import scipy.constants as sc
 import scipy.integrate
 import QCFn2nd as qcf
-#from scipy.sparse import linalg
 
-""" 
-2D well labelled in following pattern:
-  _____
- |1 2 3|
- |4 5 6|
- |_____|
-"""
 Sparseflag = False
-m = 2
-c =3**m#int(input("Enter number of points in x axis: "))
-r = c#int(input("Enter number points in y axis: "))
-a = 1#float(input("Enter width (x axis) of well: "))
-b=a#float(input("Enter depth (y axis) of well: "))
-x=a*c # spacing in x axis
-y=b*r # spacing in y axis
+m = 3
+c =3**m #int(input("Enter number of points in x axis: "))
+r = c #int(input("Enter number points in y axis: "))
+a = 1 # spacing in x axis
+b=a # spacing in y axis
+x=a*c #float(input("Enter width (x axis) of well: "))
+y=b*r #float(input("Enter depth (y axis) of well: "))
 #n = r*c # only used for energies
 xt = np.linspace(0,x,c+2)
 yt = np.linspace(0,y,r+2)
@@ -41,6 +33,7 @@ emap=[]
     
 C,xmap,ymap=qcf.CreateMap5(r,c)
 
+# Generate 1st order
 xmap1=[]
 ymap1=[]
 r1=r-2
@@ -71,25 +64,57 @@ if Sparseflag == True:
     k = 15
     w, v = sparse.linalg.eigsh(W,k,which='SM')
 
+#print(sorted(w))
+print("\n")
 Ea=[]
 E1=[]
 E2=[]
+count = 0
 # enumerate list and sort by eigenvalues, return index of relevant energy level
 # here m labels mth energy level (in sorted list of energies)
-for m in range(0,10):
+for m in range(0,25):
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
     #qcf.plotContour(X,Y,z,m)
-
     state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
     z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
     #qcf.plotContour(X1,Y1,z1,m)
-    e2 = (w[state_ind]/10)
+    e2 = ((w[state_ind]+4)/10)#-min(w))/10)
     e1 = (w1[state_ind1]/2)
-    ea = ((np.pi**2)*(x1**2)/2)*( (((m+1)**2)/r1**2) + (((m+1)**2)/c1**2) )
-    Ea.append(ea)
     E1.append(e1)
     E2.append(e2)
 
+     
+width = max(xmap1)
+spacing = a
+#print(width,spacing)
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((1)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((1)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((2)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((2)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((1)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((3)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((2)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((3)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((1)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((4)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((3)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((4)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((2)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((4)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((3)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((5)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((5)**2)/width**2)+(((1)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((5)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((5)**2)/width**2)+(((2)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((4)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((5)**2)/width**2)))
+Ea.append((((np.pi**2)*(spacing**2))/2)*((((5)**2)/width**2)+(((3)**2)/width**2)))
+
+print("Energy level | Analytic | 1st | 2nd")
 for i in range(0,len(Ea)):
     print(i,Ea[i],E1[i],E2[i])
+
+n=len(Ea)
+nt = np.linspace(0,n-1,n)
+qcf.plotEnergies(nt, Ea, E1[0:len(Ea)], E2[0:len(Ea)])
