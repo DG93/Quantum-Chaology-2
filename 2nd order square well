@@ -22,8 +22,8 @@ import QCFn2nd as qcf
  |4 5 6|
  |_____|
 """
-Sparseflag = True
-m = 3
+Sparseflag = False
+m = 2
 c =3**m#int(input("Enter number of points in x axis: "))
 r = c#int(input("Enter number points in y axis: "))
 a = 1#float(input("Enter width (x axis) of well: "))
@@ -40,26 +40,30 @@ C=[]
 emap=[]
     
 C,xmap,ymap=qcf.CreateMap5(r,c)
-   
-#for i in range(1,r+1):
-#    col_count = 0
-#    for j in range(1,c+1):
-#        if (i==1 and j==1) or (i==2 and j==1) or (i==1 and j==2) or (i==c and j==1) or (i==c-1 and j==1) or (i==c and j==2) or (i==1 and j==r) or (i==1 and j==r-1) or (i==2 and j==r) or (i==c and j==r) or (i==c-1 and j==r) or (i==c and j==r-1):
-#            z=1# do nothing   
-#        else:
-#            ymap.append(j)
-#            xmap.append(i)
-#            col_count=col_count+1
-#    C.append(col_count) 
+
+xmap1=[]
+ymap1=[]
+r1=r-2
+c1=c-2
+x1=a*c1
+y1=b*r1
+xt1 = np.linspace(0,x1,c1+2)
+yt1 = np.linspace(0,y1,r1+2)
+X1, Y1 = np.meshgrid(xt1, yt1)
+for i in range(1,r1+1):
+    for j in range(1,c1+1):
+        ymap1.append(j)
+        xmap1.append(i)
     
 # Create emap
 emap = qcf.createEmap(xmap,ymap,r,c)
 #print(emap)
 
-qcf.plotMap(xmap,ymap)
-
+#qcf.plotMap(xmap,ymap)
+W1=qcf.genMatrix(xmap1,ymap1)
 W=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
-#print(W)
+
+w1,v1 = linalg.eig(W1)
 
 if Sparseflag == False:
     w, v = linalg.eig(W)
@@ -67,32 +71,25 @@ if Sparseflag == True:
     k = 15
     w, v = sparse.linalg.eigsh(W,k,which='SM')
 
+Ea=[]
+E1=[]
+E2=[]
 # enumerate list and sort by eigenvalues, return index of relevant energy level
 # here m labels mth energy level (in sorted list of energies)
-for m in range(0,1):
+for m in range(0,10):
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
-    qcf.plotContour(X,Y,z,m,'5p')
-    qcf.plot2Dpsi(X,Y,z)
-    
+    #qcf.plotContour(X,Y,z,m)
 
-# state_x = 1#int(input("Enter energy state in x (GS=1): "))
-# state_y = 1#int(input("Enter energy state in y (GS=1): "))
+    state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
+    z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
+    #qcf.plotContour(X1,Y1,z1,m)
+    e2 = (w[state_ind]/10)
+    e1 = (w1[state_ind1]/2)
+    ea = ((np.pi**2)*(x1**2)/2)*( (((m+1)**2)/r1**2) + (((m+1)**2)/c1**2) )
+    Ea.append(ea)
+    E1.append(e1)
+    E2.append(e2)
 
-# # Energy
-# En = (w[state_ind]/2)
-# print('Energy is', En)
-# # Analytical solution (normalised)
-# ans_E = (( (state_x*np.pi*b/c)**2+(state_y*np.pi*a/r)**2 )*0.5 )
-# print('Ansatz energy is', ans_E)
-
-# Et = []
-# for i in range(1,c+1):
-#     for j in range(1,r+1):
-#         Et.append(( (i*np.pi*b/c)**2+(j*np.pi*a/r)**2 )*0.5 )
-        
-# nt = np.linspace(1,n,n)
-# E = sorted(w/2)
-# Et = sorted(Et)
-# qcf.plotEnergies(nt, E, Et)
-# qcf.plotEnergies(nt, ans_E,Et)
+for i in range(0,len(Ea)):
+    print(i,Ea[i],E1[i],E2[i])
