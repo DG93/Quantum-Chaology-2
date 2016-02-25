@@ -214,9 +214,11 @@ def genMatrix5(i,j,emap,C,c,sparseflag):
         elif emap[k]==2: M[I(i-2,j,C,c)-1,k]=-4
         elif emap[k]==3: M[I(i+2,j,C,c)-1,k]=-4
         elif emap[k]==4: M[I(i,j+2,C,c)-1,k]=-4
-        
-    if sparseflag == 1: M = sparse.csr_matrix(M)
-    return M
+    N=0    
+    if sparseflag == 1: 
+        N = M.tolist()        
+        N = sparse.csr_matrix(N)
+    return M,N
         
 def arrayFromZ(v, c, r):
     # Reshape the eigenvector
@@ -272,10 +274,10 @@ def plot2Dpsi(X,Y,z):
     plt.show()
     fig.savefig('2Dwell.png')
     
-def plotContour(X,Y,z, m):
+def plotContour(X,Y,z,m):
     fig = plt.figure(figsize=(15,15))
     plt.contourf(X, Y, z, 100, cmap=cm.gist_rainbow)
-    plt.title('Contour plot for %ith energy' %(m), fontsize=14)
+    plt.title('Contour plot for energy level %i' %(m), fontsize=14)
     plt.xlabel('$x$',fontsize=20)
     plt.ylabel('$y$',fontsize=20)
     #plt.colorbar()
