@@ -64,15 +64,12 @@ if Sparseflag == True:
     k = 15
     w, v = sparse.linalg.eigsh(W,k,which='SM')
 
-#print(sorted(w))
-print("\n")
 Ea=[]
 E1=[]
 E2=[]
-count = 0
 # enumerate list and sort by eigenvalues, return index of relevant energy level
 # here m labels mth energy level (in sorted list of energies)
-for m in range(0,25):
+for m in range(0,100):
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
     #qcf.plotContour(X,Y,z,m)
@@ -84,36 +81,17 @@ for m in range(0,25):
     E1.append(e1)
     E2.append(e2)
 
-     
 width = max(xmap1)
 spacing = a
-#print(width,spacing)
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((1)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((1)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((2)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((2)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((1)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((3)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((2)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((3)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((1)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((4)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((3)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((4)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((2)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((4)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((3)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((1)**2)/width**2)+(((5)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((5)**2)/width**2)+(((1)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((2)**2)/width**2)+(((5)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((5)**2)/width**2)+(((2)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((4)**2)/width**2)+(((4)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((3)**2)/width**2)+(((5)**2)/width**2)))
-Ea.append((((np.pi**2)*(spacing**2))/2)*((((5)**2)/width**2)+(((3)**2)/width**2)))
+for nx in range(0,10):
+    for ny in range(0,10):
+        ea = (((np.pi**2)*(spacing**2))/2)*((((nx)**2)/width**2)+(((ny)**2)/width**2))
+        Ea.append(ea)
+Ea=sorted(Ea)    
 
-print("Energy level | Analytic | 1st | 2nd")
-for i in range(0,len(Ea)):
-    print(i,Ea[i],E1[i],E2[i])
+#print("Energy level | Analytic | 1st | 2nd")
+#for i in range(0,len(Ea)):
+#    print(i,Ea[i],E1[i],E2[i])
 
 n=len(Ea)
 nt = np.linspace(0,n-1,n)
