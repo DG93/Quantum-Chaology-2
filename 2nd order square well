@@ -31,8 +31,6 @@ ymap=[]
 C=[]
 emap=[]
     
-C,xmap,ymap=qcf.CreateMap5(r,c)
-
 # Generate 1st order
 xmap1=[]
 ymap1=[]
@@ -47,44 +45,47 @@ for i in range(1,r1+1):
     for j in range(1,c1+1):
         ymap1.append(j)
         xmap1.append(i)
-    
-# Create emap
-emap = qcf.createEmap(xmap,ymap,r,c)
-#print(emap)
-
-#qcf.plotMap(xmap,ymap)
-W1=qcf.genMatrix(xmap1,ymap1)
-W=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
-
+W1=qcf.genMatrix(xmap1,ymap1)    
 w1,v1 = linalg.eig(W1)
 
+# Generate 2nd order
+C,xmap,ymap=qcf.CreateMap5(r,c)
+emap = qcf.createEmap(xmap,ymap,r,c)
+W,Ws=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
+#qcf.plotMap(xmap,ymap)
 if Sparseflag == False:
     w, v = linalg.eig(W)
 if Sparseflag == True:
-    k = 15
-    w, v = sparse.linalg.eigsh(W,k,which='SM')
+    wt, vt = linalg.eig(W)
+    k = 20
+    state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
+    zero=vt[:,state_ind_t]
+    w, v = sparse.linalg.eigsh(Ws,k,which='SM',v0=zero)
 
+# Plot contours + energies
 Ea=[]
 E1=[]
 E2=[]
-# enumerate list and sort by eigenvalues, return index of relevant energy level
-# here m labels mth energy level (in sorted list of energies)
-for m in range(0,100):
-    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-    z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
-    #qcf.plotContour(X,Y,z,m)
-    state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
-    z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
-    #qcf.plotContour(X1,Y1,z1,m)
-    e2 = ((w[state_ind]+4)/10)#-min(w))/10)
-    e1 = (w1[state_ind1]/2)
-    E1.append(e1)
-    E2.append(e2)
-
 width = max(xmap1)
 spacing = a
-for nx in range(0,10):
-    for ny in range(0,10):
+n_range = 2
+for m in range(0,n_range**2):
+    # 2nd order
+    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+    z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
+    e2 = ((w[state_ind])/10)#+4)/10)
+    E2.append(e2)
+    #qcf.plotContour(X,Y,z,m)
+    # 1st order
+    state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
+    z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
+    e1 = (w1[state_ind1]/2)
+    E1.append(e1)
+    #qcf.plotContour(X1,Y1,z1,m)
+
+# Calculate analytic energies
+for nx in range(0,n_range):
+    for ny in range(0,n_range):
         ea = (((np.pi**2)*(spacing**2))/2)*((((nx)**2)/width**2)+(((ny)**2)/width**2))
         Ea.append(ea)
 Ea=sorted(Ea)    
