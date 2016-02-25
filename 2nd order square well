@@ -53,10 +53,10 @@ C,xmap,ymap=qcf.CreateMap5(r,c)
 emap = qcf.createEmap(xmap,ymap,r,c)
 W,Ws=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
 #qcf.plotMap(xmap,ymap)
-if Sparseflag == False:
-    w, v = linalg.eig(W)
+w, v = linalg.eig(W)
 if Sparseflag == True:
-    wt, vt = linalg.eig(W)
+    wt = w
+    vt = v
     k = 20
     state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
     zero=vt[:,state_ind_t]
