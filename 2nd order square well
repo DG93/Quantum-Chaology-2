@@ -15,8 +15,8 @@ import scipy.integrate
 import QCFn2nd as qcf
 
 Sparseflag = False
-m = 3
-c =3**m #int(input("Enter number of points in x axis: "))
+m = 2
+c =5#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
@@ -51,8 +51,10 @@ w1,v1 = linalg.eig(W1)
 # Generate 2nd order
 C,xmap,ymap=qcf.CreateMap5(r,c)
 emap = qcf.createEmap(xmap,ymap,r,c)
+print(emap)
 W,Ws=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
-#qcf.plotMap(xmap,ymap)
+print(W)
+qcf.plotMap(xmap,ymap)
 w, v = linalg.eig(W)
 if Sparseflag == True:
     wt = w
@@ -73,15 +75,15 @@ for m in range(0,n_range**2):
     # 2nd order
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
-    e2 = ((w[state_ind])/10)#+4)/10)
+    e2 = ((w[state_ind])/24)#-w[sorted(enumerate(w), key=lambda x: x[1])[0][0]]/24
     E2.append(e2)
-    #qcf.plotContour(X,Y,z,m)
+    qcf.plotContour(X,Y,z,m)
     # 1st order
     state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
     z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
     e1 = (w1[state_ind1]/2)
     E1.append(e1)
-    #qcf.plotContour(X1,Y1,z1,m)
+    qcf.plotContour(X1,Y1,z1,m)
 
 # Calculate analytic energies
 for nx in range(0,n_range):
