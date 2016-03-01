@@ -38,6 +38,11 @@ def createEmap(xmap,ymap,r,c):
         elif b==r: emap.append(2)
         elif b==1: emap.append(3)
         elif a==1: emap.append(4)
+        # Add in boundaries
+        elif a==c-1: emap.append(5)
+        elif b==r-1: emap.append(5)
+        elif a==2: emap.append(5)
+        elif b==2: emap.append(5)
         else: emap.append(0)
     return emap
     
@@ -212,16 +217,12 @@ def genMatrix5(i,j,emap,C,c,sparseflag):
         i,j=ij(k,C,c)
         if emap[k]==1: 
             M[I(i,j-2,C,c),k]=-30
-            M[I(i,j-2,C,c),k-2]=0 # need to generalise this if it works, doesnt appear to
         elif emap[k]==2: 
             M[I(i-2,j,C,c),k]=-30
-            M[I(i-2,j,C,c),k-1]=0
         elif emap[k]==3: 
             M[I(i+2,j,C,c),k]=-30
-            M[I(i+2,j,C,c),k+1]=0
         elif emap[k]==4: 
             M[I(i,j+2,C,c),k]=-30
-            M[I(i,j+2,C,c),k+2]=0
     N=0    
     if sparseflag == 1: 
         N = M.tolist()        
@@ -240,7 +241,7 @@ def arrayFromZ(v, c, r):
     z = z*z
     return z
     
-def arrayFromZ5(v, c, r, C, xt, yt):
+def arrayFromZ5(v, c, r, C, xt, yt):################# This needs to be redone!!!!!!!!!!!!!!
     Colsum = 0
     z=[None]*r
     for i in range(0,r):
