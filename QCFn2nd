@@ -150,70 +150,78 @@ def genMatrix(i,j):
 def genMatrix5(i,j,emap,C,c,sparseflag):
     M = []
     for marker in range(0,len(i)):
-        R=[None]*len(i)
+        R=[0]*len(i)
         for k in range(0, len(i)):
             if marker == 0:
                 if k == marker:
-                    R[k] = 4.
+                    R[k] += 30.
                 elif (i[k] == i[marker]+1 and j[k] == j[marker]):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker] and j[k] == j[marker]+1):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker]+2 and j[k] == j[marker]):
-                    R[k] = -1
+                    R[k] += 1
                 elif (i[k] == i[marker] and j[k] == j[marker]+2):
-                    R[k] = -1
+                    R[k] += 1
                 else:
-                    R[k] = 0                    
+                    R[k] += 0                    
             elif marker == (len(i)-1):
                 if k == marker:
-                    R[k] = 4
+                    R[k] += 30
                 elif (i[k] == i[marker]-1 and j[k] == j[marker]):
-                    R[k] = -1        
+                    R[k] += -16        
                 elif (i[k] == i[marker] and j[k] == j[marker]-1):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker]-2 and j[k] == j[marker]):
-                    R[k] = -1        
+                    R[k] += 1        
                 elif (i[k] == i[marker] and j[k] == j[marker]-2):
-                    R[k] = -1
+                    R[k] += 1
                 else:
-                    R[k] = 0                    
+                    R[k] += 0                    
             else:
                 if k == marker:
-                    R[k] = 4
+                    R[k] += 30
                 elif (i[k] == i[marker]+1 and j[k] == j[marker]):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker]-1 and j[k] == j[marker]):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker] and j[k] == j[marker]+1):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker] and j[k] == j[marker]-1):
-                    R[k] = -1
+                    R[k] += -16
                 elif (i[k] == i[marker]+2 and j[k] == j[marker]):
-                    R[k] = -1
+                    R[k] += 1
                 elif (i[k] == i[marker]-2 and j[k] == j[marker]):
-                    R[k] = -1
+                    R[k] += 1
                 elif (i[k] == i[marker] and j[k] == j[marker]+2):
-                    R[k] = -1
+                    R[k] += 1
                 elif (i[k] == i[marker] and j[k] == j[marker]-2):
-                    R[k] = -1
+                    R[k] += 1
                 else:
-                    R[k] = 0
+                    R[k] += 0
         M.append(R)
     M = np.array(M)
     # Add zeroes
     for k in range(0,len(emap)):
         if emap[k] != 0:
-            for l in range(0,len(emap)): 
+            for l in range(0,len(emap)):
                 M[k,l] = 0
                 M[l,k] = 0
-    # Add -4's
+    # Add -30's
     for k in range(0,len(emap)):
         i,j=ij(k,C,c)
-        if emap[k]==1: M[I(i,j-2,C,c)-1,k]=-4
-        elif emap[k]==2: M[I(i-2,j,C,c)-1,k]=-4
-        elif emap[k]==3: M[I(i+2,j,C,c)-1,k]=-4
-        elif emap[k]==4: M[I(i,j+2,C,c)-1,k]=-4
+        if emap[k]==1: 
+            M[I(i,j-2,C,c),k]=-30
+            M[I(i,j-2,C,c),k-2]=0 # need to generalise this if it works, doesnt appear to
+        elif emap[k]==2: 
+            M[I(i-2,j,C,c),k]=-30
+            M[I(i-2,j,C,c),k-1]=0
+        elif emap[k]==3: 
+            M[I(i+2,j,C,c),k]=-30
+            M[I(i+2,j,C,c),k+1]=0
+        elif emap[k]==4: 
+            M[I(i,j+2,C,c),k]=-30
+            M[I(i,j+2,C,c),k+2]=0
     N=0    
     if sparseflag == 1: 
         N = M.tolist()        
@@ -259,6 +267,8 @@ def plotMap(xmap,ymap):
     plt.title('Points', fontsize=30)
     plt.xlabel('$x$',fontsize=20)
     plt.ylabel('$y$',fontsize=20)
+    plt.xlim(min(xmap)-1,max(xmap)+1)
+    plt.ylim(min(ymap)-1,max(ymap)+1)
     plt.show()
     fig.savefig('Map.png')
 
