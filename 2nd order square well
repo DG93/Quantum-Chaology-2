@@ -7,12 +7,12 @@ Created on Wed Sep 30 17:35:32 2015
 """
 import numpy as np
 from numpy import linalg
-from scipy import sparse
+import scipy.sparse.linalg as sp
 import QCFn2nd as qcf
 
 Sparseflag = False
 m = 2
-c = 15#3**m #int(input("Enter number of points in x axis: "))
+c = 31#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
@@ -59,10 +59,10 @@ for i in range(0,len(w)):
 if Sparseflag == True:
     wt = w
     vt = v
-    k = 20
+    k = 25
     state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
     zero=vt[:,state_ind_t]
-    w, v = sparse.linalg.eigsh(Ws,k,which='SM')#,v0=zero)
+    w, v = sp.eigsh(Ws,k,which='SM',v0=zero)
 
 # Plot contours + energies
 Ea=[]
@@ -70,20 +70,20 @@ E1=[]
 E2=[]
 width = max(xmap1)
 spacing = a
-n_range = 4#len(w2)
+n_range = 700#len(w2)
 for m in range(0,n_range):
     # 2nd order
     state_ind = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
     e2 = ((w2[state_ind])/24)
     E2.append(e2)
-    qcf.plotContour(X,Y,z,m)
+    #qcf.plotContour(X,Y,z,m)
     # 1st order
     state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
     z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
     e1 = (w1[state_ind1]/2)
     E1.append(e1)
-    qcf.plotContour(X1,Y1,z1,m)
+    #qcf.plotContour(X1,Y1,z1,m)
 
 # Calculate analytic energies
 for nx in range(0,int(np.sqrt(n_range))+1):
