@@ -273,8 +273,8 @@ def arrayFromZ5(v, c, r, C, xt, yt, xymap):
 ############################## PLOTTING #######################################
         
 def masking(c,r,z):
-        for i in range(1,c+1):
-            for j in range(1,c+1):
+        for i in range(1,c-1):
+            for j in range(1,c-1):
                 if z[i][j]==0:
                     if z[i+1][j]==0 and z[i-1][j]==0 and z[i][j-1]==0 and z[i][j+1]==0:
                         z[i][j] = np.nan
@@ -283,7 +283,7 @@ def masking(c,r,z):
 def plotContourSP(X,Y,z,m,r,c,iterations_label):
     plottextsize = 24
     fig = plt.figure(figsize=(15,15))
-    #z = masking(c,r,z)
+    z = masking(c,r,z)
     no_bins = 500
     lev = np.linspace(0,np.nanmax(z),no_bins)
     plt.gca().patch.set_color('.25')
