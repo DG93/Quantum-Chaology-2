@@ -19,8 +19,8 @@ a = 1 #float(input("Enter width (x axis) of well: "))
 b=a #float(input("Enter depth (y axis) of well: "))
 x=a*c # spacing in x axis
 y=b*r # spacing in y axis
-xt = np.linspace(0,x,c+2)
-yt = np.linspace(0,y,r+2)
+xt = np.linspace(0,x,c)
+yt = np.linspace(0,y,r)
 X,Y = np.meshgrid(xt, yt)
 xmap=[]
 ymap=[]
@@ -35,13 +35,20 @@ emap = qcf.createEmap(xmap,ymap,r,c,C,xymap)
 
 qcf.plotMap(xmap,ymap)
 
-W=qcf.genMatrix5(xmap,ymap,emap,C,c,xmap,ymap,xymap,Sparseflag)
+W,Ws=qcf.genMatrix5(xmap,ymap,emap,C,c,xmap,ymap,xymap,Sparseflag)
 
 if Sparseflag == False:
     w, v = linalg.eig(W)
+    w2=[]
+    for i in range(0,len(w)):
+        if w[i]!=0: w2.append(w[i])
+    w=w2
 if Sparseflag == True:
+    wt, vt = linalg.eig(W)
     k = 10
-    w, v = sp.eigsh(W,k,which='SM')
+    state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
+    zero=vt[:,state_ind_t]
+    w, v = sp.eigsh(Ws,k,which='SM',v0=zero)
 
 # enumerate list and sort by eigenvalues, return index of relevant energy level
 # here m labels mth energy level (in sorted list of energies)
