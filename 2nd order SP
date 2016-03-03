@@ -11,8 +11,8 @@ from numpy import linalg
 import SP2ndFn as qcf
 
 Sparseflag = False
-no_iterations = 2
-m = 3
+no_iterations = 3
+m = 4
 c = 3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 #float(input("Enter width (x axis) of well: "))
@@ -48,10 +48,8 @@ if Sparseflag == True:
     k = 10
     state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
     zero=vt[:,state_ind_t]
-    w, v = sp.eigsh(Ws,k,which='SM',v0=zero)
+    w, v = sp.eigsh(Ws,k,which='SM')#,v0=zero)
 
-# enumerate list and sort by eigenvalues, return index of relevant energy level
-# here m labels mth energy level (in sorted list of energies)
 for m in range(0,1):
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt, xymap)
