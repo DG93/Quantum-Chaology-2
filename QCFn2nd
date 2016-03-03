@@ -244,20 +244,20 @@ def arrayFromZ(v, c, r):
     z = z*z
     return z
     
-def arrayFromZ5(v, c, r, C, xt, yt):########### This needs to be redone!!!!!
+def arrayFromZ5(v, c, r, C, xt, yt):
     Colsum = 0
     z=[None]*r
     for i in range(0,r):
         z[i] = (v[Colsum:Colsum+C[i]])
         Colsum = Colsum+C[i]
     z = np.array(z)
-    zero = np.zeros(((r+2), (c+2)))
+    zero = np.zeros(((r), (c)))
     for i in range(0,r):
         for j in range(0,C[i]): 
-            np.put(zero[i+1], [(c+2-C[i])/2+j], z[i][j])
+            np.put(zero[i], [(c-C[i])/2+j], z[i][j])
     z = zero*zero
     Ix=[]
-    for i in range(0,r+2):
+    for i in range(0,r):
         Ix.append(sp.integrate.simps(z[i,:], x=xt))    
     I = sp.integrate.simps(Ix, x=yt)
     z=z/I
@@ -299,7 +299,7 @@ def plotContour(X,Y,z,m):
     fig.savefig('Contour_%i.png' %(m))
     
 def plotEnergies(nt, Ea, E1, E2):
-    fig2 = plt.figure(figsize=(15,10))
+    fig = plt.figure(figsize=(15,10))
     plt.plot(nt, Ea, label='Analytic')
     plt.plot(nt, E1, label='1st order')
     plt.plot(nt, E2, label='2nd order')
@@ -308,4 +308,20 @@ def plotEnergies(nt, Ea, E1, E2):
     plt.ylabel('$Energy$',fontsize=20)
     plt.legend()
     plt.show()
-    fig2.savefig('2D_E_vs_n.png')
+    fig.savefig('2D_E_vs_n.png')
+    
+def plotEnergyDiff(nt, Ea, E1, E2):
+    fig = plt.figure(figsize=(15,10))
+    D1=[]
+    D2=[]
+    for i in range(0,len(nt)):
+        D1.append(abs(E1[i]-Ea[i]))
+        D2.append(abs(E2[i]-Ea[i]))
+    plt.plot(nt, D1, label='1st order')
+    plt.plot(nt, D2, label='2nd order')
+    plt.title('Energy vs n Difference', fontsize=30)
+    plt.xlabel('$n$',fontsize=20)
+    plt.ylabel('$Energy$',fontsize=20)
+    plt.legend()
+    plt.show()
+    fig.savefig('2D_E_vs_n_diff.png')
