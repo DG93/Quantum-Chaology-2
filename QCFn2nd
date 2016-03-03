@@ -218,14 +218,10 @@ def genMatrix5(i,j,emap,C,c,sparseflag):
     # Add -30's
     for k in range(0,len(emap)):
         i,j=ij(k,C,c)
-        if emap[k]==1: 
-            M[I(i,j-2,C,c),k]=-60
-        elif emap[k]==2: 
-            M[I(i-2,j,C,c),k]=-60
-        elif emap[k]==3: 
-            M[I(i+2,j,C,c),k]=-60
-        elif emap[k]==4: 
-            M[I(i,j+2,C,c),k]=-60
+        if emap[k]==1: M[I(i,j-2,C,c),k]=-60
+        elif emap[k]==2: M[I(i-2,j,C,c),k]=-60
+        elif emap[k]==3: M[I(i+2,j,C,c),k]=-60
+        elif emap[k]==4: M[I(i,j+2,C,c),k]=-60
     N=0    
     if sparseflag == 1: 
         N = M.tolist()        
