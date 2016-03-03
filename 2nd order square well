@@ -6,30 +6,27 @@ Created on Wed Sep 30 17:35:32 2015
 @author: Dan Goldsmith & Dan Locke
 """
 import numpy as np
-import scipy as sp
 from numpy import linalg
 from scipy import sparse
-import matplotlib.pyplot as plt
-import scipy.constants as sc
-import scipy.integrate
 import QCFn2nd as qcf
 
 Sparseflag = False
 m = 2
-c = 31#3**m #int(input("Enter number of points in x axis: "))
+c = 15#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
 x=a*c #float(input("Enter width (x axis) of well: "))
 y=b*r #float(input("Enter depth (y axis) of well: "))
 #n = r*c # only used for energies
-xt = np.linspace(0,x,c+2)
-yt = np.linspace(0,y,r+2)
+xt = np.linspace(0,x,c)
+yt = np.linspace(0,y,r)
 X, Y = np.meshgrid(xt, yt)
 xmap=[]
 ymap=[]
 C=[]
 emap=[]
+w2=[]
     
 # Generate 1st order
 xmap1=[]
@@ -53,18 +50,19 @@ C,xmap,ymap=qcf.CreateMap5(r,c)
 emap = qcf.createEmap(xmap,ymap,r,c)
 #print(emap)
 W,Ws=qcf.genMatrix5(xmap,ymap,emap,C,c,Sparseflag)
-#for i in range(0,len(W)):
-#    print(i+1,W[i])
 qcf.plotMap(xmap,ymap)
 w, v = linalg.eig(W)
-print(w)
+for i in range(0,len(w)):
+    if w[i]!=0: w2.append(w[i])
+
+# Sparse matrices
 if Sparseflag == True:
     wt = w
     vt = v
     k = 20
     state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
     zero=vt[:,state_ind_t]
-    w, v = sparse.linalg.eigsh(Ws,k,which='SM',v0=zero)
+    w, v = sparse.linalg.eigsh(Ws,k,which='SM')#,v0=zero)
 
 # Plot contours + energies
 Ea=[]
@@ -72,33 +70,28 @@ E1=[]
 E2=[]
 width = max(xmap1)
 spacing = a
-n_range = min(len(w),len(w1))
+n_range = 4#len(w2)
 for m in range(0,n_range):
     # 2nd order
-    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+    state_ind = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
     z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt)
-    e2 = ((w[state_ind])/24)#-w[sorted(enumerate(w), key=lambda x: x[1])[0][0]]/24   
+    e2 = ((w2[state_ind])/24)
     E2.append(e2)
-    #qcf.plotContour(X,Y,z,m)
+    qcf.plotContour(X,Y,z,m)
     # 1st order
     state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
     z1 = qcf.arrayFromZ(v1[:,state_ind1], c1, r1)
     e1 = (w1[state_ind1]/2)
     E1.append(e1)
-#    E1.append(0)
-    #qcf.plotContour(X1,Y1,z1,m)
+    qcf.plotContour(X1,Y1,z1,m)
 
 # Calculate analytic energies
-for nx in range(0,n_range):
-    for ny in range(0,n_range):
+for nx in range(0,int(np.sqrt(n_range))+1):
+    for ny in range(0,int(np.sqrt(n_range))+1):
         ea = (((np.pi**2)*(spacing**2))/2)*((((nx)**2)/width**2)+(((ny)**2)/width**2))
         Ea.append(ea)
 Ea=sorted(Ea)    
-
-#print("Energy level | Analytic | 1st | 2nd")
-#for i in range(0,len(Ea)):
-#    print(i,Ea[i],E1[i],E2[i])
-
 n=len(E2)
 nt = np.linspace(0,n-1,n)
 qcf.plotEnergies(nt, Ea[0:len(E2)], E1[0:len(E2)], E2[0:len(E2)])
+qcf.plotEnergyDiff(nt, Ea[0:len(E2)], E1[0:len(E2)], E2[0:len(E2)])
