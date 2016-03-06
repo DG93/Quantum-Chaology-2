@@ -206,7 +206,7 @@ def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag):
                     M[k,l] = 0
                     M[l,k] = 0
                 n=len(emap[k])
-    # Add -4's
+    # Add -60's
     for k in range(0,len(emap)):
         i,j=ij(k,C,c)
         a=ymap[k]-1
@@ -223,7 +223,7 @@ def genMatrix5(i,j,emap,C,c,xmap,ymap,xymap,sparseflag):
             if xymap[a-1][b]==0: M[I(i-2,j,C,c)-1,k]=0
         if b+1<C[a]:
             if xymap[a][b+1]==0: M[I(i,j+2,C,c)-1,k]=0
-    # Keep this version section incase the other one fails !!!
+    # Keep this version section incase the above fails !!!
 #        print(a,b,C[a],len(C),xymap[a])
 #        try: s=xymap[a+1][b]
 #        except IndexError: print("Caught error a+1")
