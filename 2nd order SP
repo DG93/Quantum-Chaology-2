@@ -40,19 +40,21 @@ W,Ws=qcf.genMatrix5(xmap,ymap,emap,C,c,xmap,ymap,xymap,Sparseflag)
 if Sparseflag == False:
     w, v = linalg.eig(W)
     w2=[]
+    v2=[]
     for i in range(0,len(w)):
-        if w[i]!=0: w2.append(w[i])
+        if w[i]!=0: 
+            w2.append(w[i])
+            v2.append(v[:,i])
+    v=np.array(v2)
     w=w2
 if Sparseflag == True:
-    wt, vt = linalg.eig(W)
     k = 10
-    state_ind_t = sorted(enumerate(wt), key=lambda x: x[1])[0][0]
-    zero=vt[:,state_ind_t]
-    w, v = sp.eigsh(Ws,k,which='SM')#,v0=zero)
+    w, v = sp.eigsh(Ws,k,which='SM')
 
 for m in range(0,1):
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-    z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt, xymap)
+#    z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt, xymap)
+    z = qcf.arrayFromZ5(v[state_ind], c, r, C, xt, yt, xymap)
     qcf.plot2Dpsi(X,Y,z)
     qcf.plotContourSP(X,Y,z,m,r,c,iterations_label)    
     
