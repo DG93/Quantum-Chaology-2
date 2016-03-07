@@ -215,7 +215,7 @@ def genMatrix5(i,j,emap,C,c,sparseflag):
             for l in range(0,len(emap)):
                 M[k,l] = 0
                 M[l,k] = 0
-    # Add -30's
+    # Add -60's
     for k in range(0,len(emap)):
         i,j=ij(k,C,c)
         if emap[k]==1: M[I(i,j-2,C,c),k]=-60
