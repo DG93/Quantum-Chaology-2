@@ -21,7 +21,7 @@ x=a*c # spacing in x axis
 y=b*r # spacing in y axis
 xt = np.linspace(0,x,c)
 yt = np.linspace(0,y,r)
-X,Y = np.meshgrid(xt, yt)
+X,Y = np.meshgrid(xt,yt)
 xmap=[]
 ymap=[]
 C=[]
@@ -53,7 +53,6 @@ if Sparseflag == True:
 
 for m in range(0,1):
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-#    z = qcf.arrayFromZ5(v[:,state_ind], c, r, C, xt, yt, xymap)
     z = qcf.arrayFromZ5(v[state_ind], c, r, C, xt, yt, xymap)
     qcf.plot2Dpsi(X,Y,z)
     qcf.plotContourSP(X,Y,z,m,r,c,iterations_label)    
