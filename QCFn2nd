@@ -5,7 +5,7 @@ Created on Tue Oct 13 14:03:57 2015
 @author: mbyx9dl2
 """
 import numpy as np
-import scipy as sp
+from scipy import integrate
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy import sparse
@@ -254,8 +254,8 @@ def arrayFromZ5(v, c, r, C, xt, yt):
     z = zero*zero
     Ix=[]
     for i in range(0,r):
-        Ix.append(sp.integrate.simps(z[i,:], x=xt))    
-    I = sp.integrate.simps(Ix, x=yt)
+        Ix.append(integrate.simps(z[i,:], x=xt))    
+    I = integrate.simps(Ix, x=yt)
     z=z/I
     return z
     
