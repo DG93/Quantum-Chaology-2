@@ -14,7 +14,7 @@ import time
 t0 = time.clock()
 Sparseflag = False
 m = 2
-c = 81#3**m #int(input("Enter number of points in x axis: "))
+c = 61#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
@@ -74,7 +74,7 @@ E1=[]
 E2=[]
 width = max(xmap1)
 spacing = a
-n_range = 1000#len(w2)
+n_range = len(w2)
 for m in range(0,n_range):
     # 2nd order
     state_ind = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
@@ -101,4 +101,4 @@ nt = np.linspace(0,n-1,n)
 qcf.plotEnergies(nt, Ea[0:len(E2)], E1[0:len(E2)], E2[0:len(E2)])
 qcf.plotEnergyDiff(nt, Ea[0:len(E2)], E1[0:len(E2)], E2[0:len(E2)])
 comp_time = (time.clock()-t0)/60.0
-print("Time taken: %f mins" %comp_time )
+print("Time taken: %f mins" %comp_time)
