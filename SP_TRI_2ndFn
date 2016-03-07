@@ -2,10 +2,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-import scipy.integrate
+from scipy import integrate
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import leastsq
-import scipy as sci
 from scipy import sparse
 from scipy.optimize import curve_fit
 
@@ -42,26 +41,26 @@ class QC:
         self.C=[]
         self.emap=[]
         self.xymap=[]
-        self.X,self.Y=np.meshgrid(xt,yt)
+        self.X,self.Y=np.meshgrid(self.xt,self.yt)
 
 ########################## 2nd order ##########################################
         
-    def I(self,i,j,C,c):
-    I = 0
-    l=0
-    for k in range(0,j-1):
-        I=I+C[k]
-        l=k+1
-    I=I+i-(c-C[l])//2
-    return I
+    def I(self,i,j):
+        I = 0
+        l=0
+        for k in range(0,j-1):
+            I=I+self.C[k]
+            l=k+1
+        I=I+i-(self.c-self.C[l])//2
+        return I
     
-    def ij(self,I,C,c):
+    def ij(self,I):
         k=0
-        while I-C[k]>=0:
-            I=I-C[k]
+        while I-self.C[k]>=0:
+            I=I-self.C[k]
             k=k+1
         j=k+1
-        i=I+(c-C[k])//2
+        i=I+(self.c-self.C[k])//2
         return i,j
         
     def createEmap(self):
@@ -72,25 +71,24 @@ class QC:
             b=self.ymap[i]
             A=a-1
             B=b-1
-            if a==c or b==r or b==1 or a==1 or a==c-1 or b==r-1 or b==2 or a==2:
-                if a==c: emap_t.append(1)
-                if b==r: emap_t.append(2)
+            if a==self.c or b==self.r or b==1 or a==1 or a==self.c-1 or b==self.r-1 or b==2 or a==2:
+                if a==self.c: emap_t.append(1)
+                if b==self.r: emap_t.append(2)
                 if b==1: emap_t.append(3)
                 if a==1: emap_t.append(4)
-                if a==c-1: emap_t.append(5)
-                if b==r-1: emap_t.append(5)
+                if a==self.c-1: emap_t.append(5)
+                if b==self.r-1: emap_t.append(5)
                 if a==2: emap_t.append(5)
                 if b==2: emap_t.append(5)
                 else: emap_t.append(0)
-            self.emap.append(emap_t)
             
-            if xymap[A][B-(self.c-self.C[A])//2]==0:
+            if self.xymap[A][B-(self.c-self.C[A])//2]==0:
                 if self.xymap[A][B-2]==1 and self.xymap[A][B-1]==1: emap_t.append(1)
                 if self.xymap[A-2][B]==1 and self.xymap[A-1][B]==1: emap_t.append(2)
                 if self.xymap[A+2][B]==1 and self.xymap[A+1][B]==1: emap_t.append(3)
                 if self.xymap[A][B+2]==1 and self.xymap[A][B+1]==1: emap_t.append(4)
             else: emap_t.append(0)
-
+            self.emap.append(emap_t)
         
     def CreateMap5(self):
         t=[]
@@ -107,40 +105,40 @@ class QC:
         t3.append(2)
         t.append(t3)
         t4=[]
-        t4.append(c)
+        t4.append(self.c)
         t4.append(1)
         t.append(t4)
         t5=[]
-        t5.append(c-1)
+        t5.append(self.c-1)
         t5.append(1)
         t.append(t5)
         t6=[]
-        t6.append(c)
+        t6.append(self.c)
         t6.append(2)
         t.append(t6)
         t7=[]
         t7.append(1)
-        t7.append(r)
+        t7.append(self.r)
         t.append(t7)
         t8=[]
         t8.append(1)
-        t8.append(r-1)
+        t8.append(self.r-1)
         t.append(t8)
         t9=[]
         t9.append(2)
-        t9.append(r)
+        t9.append(self.r)
         t.append(t9)
         t10=[]
-        t10.append(c)
-        t10.append(r)
+        t10.append(self.c)
+        t10.append(self.r)
         t.append(t10)
         t11=[]
-        t11.append(c-1)
-        t11.append(r)
+        t11.append(self.c-1)
+        t11.append(self.r)
         t.append(t11)
         t12=[]
-        t12.append(c)
-        t12.append(r-1)
+        t12.append(self.c)
+        t12.append(self.r-1)
         t.append(t12)
         for i in range(1,self.r+1):
             col_count = 0
@@ -150,7 +148,7 @@ class QC:
                 test.append(i)
                 test.append(j)
                 if test not in t:
-                    if inside(i,j,self.iterations) == 1: 
+                    if self.inside(i,j) == 1: 
                         xymap_t.append(1)
                     else: xymap_t.append(0)
                     self.ymap.append(j)
@@ -159,7 +157,9 @@ class QC:
             self.xymap.append(xymap_t)  
             self.C.append(col_count)
     
-    def genMatrix5(self,i,j,emap,C,c,xmap,ymap,xymap,sparseflag): 
+    def genMatrix5(self,sparseflag): 
+        i=self.xmap
+        j=self.ymap
         X=60.
         Y=-16.
         Z=1.
@@ -217,30 +217,30 @@ class QC:
             M.append(R)
         M = np.array(M)
         # Add zeroes - inc. points in centre
-        for k in range(0,len(emap)):
-            for n in range(0,len(emap[k])):
-                if emap[k][n] != 0:
-                    for l in range(0,len(emap)): 
+        for k in range(0,len(self.emap)):
+            for n in range(0,len(self.emap[k])):
+                if self.emap[k][n] != 0:
+                    for l in range(0,len(self.emap)): 
                         M[k,l] = 0
                         M[l,k] = 0
-                    n=len(emap[k])
+                    n=len(self.emap[k])
         # Add -60's
-        for k in range(0,len(emap)):
-            i,j=ij(k,C,c)
-            a=ymap[k]-1
-            b=xmap[k]-1-(c-C[a])//2 
-            if emap[k]==1: M[I(i,j-2,C,c),k]=-60
-            elif emap[k]==2: M[I(i-2,j,C,c),k]=-60
-            elif emap[k]==3: M[I(i+2,j,C,c),k]=-60
-            elif emap[k]==4: M[I(i,j+2,C,c),k]=-60
+        for k in range(0,len(self.emap)):
+            i,j=self.ij(k)
+            a=self.ymap[k]-1
+            b=self.xmap[k]-1-(self.c-self.C[a])//2 
+            if self.emap[k]==1: M[self.I(i,j-2),k]=-60
+            elif self.emap[k]==2: M[self.I(i-2),k]=-60
+            elif self.emap[k]==3: M[self.I(i+2,j),k]=-60
+            elif self.emap[k]==4: M[self.I(i,j+2),k]=-60
         # Set points thru boundaries to zero
-            if a+1<len(C):
-                if b<C[a+1]:
-                    if xymap[a+1][b]==0: M[I(i+2,j,C,c)-1,k]=0
-            if C[a-1]>=C[a]:
-                if xymap[a-1][b]==0: M[I(i-2,j,C,c)-1,k]=0
-            if b+1<C[a]:
-                if xymap[a][b+1]==0: M[I(i,j+2,C,c)-1,k]=0
+            if a+1<len(self.C):
+                if b<self.C[a+1]:
+                    if self.xymap[a+1][b]==0: M[self.I(i+2,j)-1,k]=0
+            if self.C[a-1]>=self.C[a]:
+                if self.xymap[a-1][b]==0: M[self.I(i-2,j)-1,k]=0
+            if b+1<self.C[a]:
+                if self.xymap[a][b+1]==0: M[self.I(i,j+2-1),k]=0
         # Keep this version section incase the above fails !!!
     #        print(a,b,C[a],len(C),xymap[a])
     #        try: s=xymap[a+1][b]
@@ -265,26 +265,26 @@ class QC:
             N = sparse.csr_matrix(N)
         return M,N
         
-    def arrayFromZ5(self,v, c, r, C, xt, yt, xymap):
-        z=[None]*r        
+    def arrayFromZ5(self,v):
+        z=[None]*self.r        
         j=0
-        for i in range(0,len(C)):
-            v_t = np.zeros(C[i])
-            for k in range(0,C[i]):
-                if xymap[i][k] == 1:
+        for i in range(0,len(self.C)):
+            v_t = np.zeros(self.C[i])
+            for k in range(0,self.C[i]):
+                if self.xymap[i][k] == 1:
                     v_t[k] = v[j]
                 j+=1
             z[i] = (v_t)      
         z = np.array(z)
-        zero = np.zeros(((r), (c)))
-        for i in range(0,r):
-            for j in range(0,C[i]):
-                np.put(zero[i], [(c-C[i])/2+j], z[i][j])
+        zero = np.zeros(((self.r), (self.c)))
+        for i in range(0,self.r):
+            for j in range(0,self.C[i]):
+                np.put(zero[i], [(self.c-self.C[i])/2+j], z[i][j])
         z = zero*zero
         Ix=[]
-        for i in range(0,r):
-            Ix.append(integrate.simps(z[i,:], x=xt))    
-        I = integrate.simps(Ix, x=yt)
+        for i in range(0,self.r):
+            Ix.append(integrate.simps(z[i,:], x=self.xt))    
+        I = integrate.simps(Ix, x=self.yt)
         z=z/I
         return z
         
@@ -434,8 +434,8 @@ class QC:
         z = zero*zero
         Ix=[]
         for i in range(0,self.r+2):
-            Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
-        I = scipy.integrate.simps(Ix, x=yt)
+            Ix.append(integrate.simps(z[i,:], x=xt))    
+        I = integrate.simps(Ix, x=yt)
         z=z/I
         return z
     
@@ -448,7 +448,7 @@ class QC:
             for L in range(1,4*l//10):#l//10+1):
                 r = redE[c-L:c+L]
                 t=((nt[c-L:c+L] - redPolyN(redE[c-L:c+L]))**2)
-                temp.append(scipy.integrate.simps(t, x=r)/L)
+                temp.append(integrate.simps(t, x=r)/L)
             varDelta3.append(temp)
         Delta3=np.sum(varDelta3, axis=0)
         for j in range(0,len(Delta3)):
