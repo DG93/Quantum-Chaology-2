@@ -1,0 +1,427 @@
+# -*- coding: utf-8 -*-
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+import scipy.integrate
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.optimize import leastsq
+import scipy as sci
+from scipy import sparse
+from scipy.optimize import curve_fit
+
+class QC:
+    def __init__(self,m,a, no_iterations):
+        self.plottextsize = 24
+        plt.rcParams.update({'font.size': self.plottextsize})
+        self.r = 3**m
+        self.c = 3**m
+        self.sidelength = (self.c+1)//2
+        self.a = a
+        self.b=a
+        self.x = (self.c-1)*a#float(input("Enter width (x axis) of well: "))
+        self.y = (self.r-1)*a#float(input("Enter depth (y axis) of well: "))
+        self.xmap=[]
+        self.ymap=[]
+        self.xymap=[]
+        self.Imap=[]
+        self.C=[]
+        self.halfC=[]
+        self.Q=[]
+        self.Q_arr=[]
+        self.M=[]
+        self.M_vert=[]
+        self.M_hor=[]
+        self.M2=[]
+        self.xt = np.linspace(0,self.x,self.c+2)
+        self.yt = np.linspace(0,self.y,self.r+2)
+        self.M_sym=[]
+        self.sym_ind=[]
+        self.bord_len = 0
+        self.no_points=0
+        self.m = m
+        self.iterations=(-m)+no_iterations
+        self.iterations_label = no_iterations
+        
+    def FillM(self):
+        no_points=len(self.xmap)
+        for I in range(0,no_points):
+                if self.xmap[I]==self.sidelength: self.M_vert.append(I)
+                if self.ymap[I]==self.sidelength: self.M_hor.append(I)
+                if self.xmap[I]==self.sidelength or self.ymap[I]==self.sidelength: self.M.append( I )
+                if self.xmap[I]==self.sidelength and self.ymap[I]==self.sidelength: self.M2.append( I )
+
+    
+    def delta(self,var,a):
+        if var in a:
+            return 1
+        else:
+            return 0
+    
+    def deltaQRTR(self,i,I,j,J):
+        DQ = np.sqrt((1+self.delta(self.Q[i][I],self.M2))*(1+self.delta(self.Q[j][J],self.M2))*(1+self.delta(self.Q[i][I],self.M))*(1+self.delta(self.Q[j][J],self.M))) 
+        return DQ
+        
+    def inside(self, i, j):
+        x = j-1
+        y = i-1
+        iter_t = 1
+        while(x>0 or y>0): # when either of these reaches zero the pixel is determined to be on the edge 
+                                   # at that square level and must be filled
+            
+
+            if(x%3==1 and y%3==1): #checks if the pixel is in the center for the current square level
+                if iter_t > -self.iterations: 
+                    return 0
+                
+            x = x // 3 #x and y are decremented to check the next larger square level
+            y = y // 3
+            iter_t = iter_t + 1
+        
+        return 1 # if all possible square levels are checked and the pixel is not determined 
+        # to be open it must be filled
+                
+
+    def CreateMap(self):
+        k=0
+        for i in range(1,self.r+1):
+            xymap_t=[]
+            Imap_t=[]
+            
+            for j in range(1,self.r+1):
+                if self.inside(i,j) == 1: 
+                    self.xmap.append(j)
+                    self.ymap.append(i)
+                    xymap_t.append(1)
+                    Imap_t.append(k)
+                    k+=1
+                    
+                else: xymap_t.append(0)
+            self.xymap.append(xymap_t)
+            self.Imap.append(Imap_t)
+        self.no_points=(len(self.xmap))
+
+    def Symmetry(self, sym_type):
+        if sym_type == "ee": 
+            self.sym_ind = [0,1,2,3]
+            self.bord_len=0
+        if sym_type == "oe":
+            self.sym_ind = [0,2]
+            self.M_sym = self.M_vert
+            self.bord_len = len(self.Imap[(self.r-1)//2])//2
+        if sym_type == "eo":
+            self.sym_ind = [0,1]
+            self.M_sym = self.M_hor
+            self.bord_len = len(self.Imap[(self.r-1)//2])//2
+        if sym_type == "oo": 
+            self.sym_ind = [0]
+            self.M_sym = self.M
+            self.bord_len = len(self.Imap[(self.r-1)//2])
+    
+    def CreateQs(self):
+        i = self.xmap
+        sidelength = (self.c+1)//2
+        no_points = len(i)
+        Q1=[]
+        Q2=[]
+        Q3=[]
+        Q4=[]
+        for i in range(0,self.r):
+            for j in range(0,len(self.Imap[i])):
+                if i<sidelength and j<= ((len(self.Imap[i])-1)//2): 
+                    Q1.append(self.Imap[i][j])
+                    Q2.append(self.Imap[-(i+1)][j])
+                    Q3.append(self.Imap[i][-(j+1)])
+                    Q4.append(self.Imap[-(i+1)][-(j+1)])
+                
+                    
+        self.Q.append(Q1)#[::-1])
+        self.Q.append(Q2)#[::-1])
+        self.Q.append(Q3)#[::-1])
+        self.Q.append(Q4)#[::-1])
+
+
+                    
+        
+        
+    
+
+                
+    def genMatrix(self, sparseflag):
+        i = self.xmap
+        sidelength = (self.c+1)//2
+        no_points = len(i)
+        M = []        
+        for I in range(0,no_points):
+            R=np.zeros(no_points)
+            for J in range(0,no_points):
+                R[I] = 4.0
+                if (J!=I and self.adjacentpoint(I,J)==1): R[J] = -1
+            M.append(R)
+        if sparseflag == 1: M2 = sparse.csr_matrix(M)
+        if sparseflag == 0: M2 = np.array(M)
+        return M2
+        
+        
+    def adjacentpoint(self, I,J):
+        adjbool = 0
+        if (abs(self.xmap[J]-self.xmap[I])==1) and (self.ymap[J]== self.ymap[I]): adjbool += 1
+        if (abs(self.ymap[J]-self.ymap[I])==1) and (self.xmap[J]== self.xmap[I]): adjbool += 1
+        return adjbool
+
+        
+
+
+    def QRTRarrayFromZ(self,v, xt, yt, sym_type):
+        symvect=[1,1]
+        oddfact1=0
+        oddfact2=0
+        if sym_type == "oo": 
+            symvect = [-1,-1]
+            #z.append(np.zeros((self.c+1)//2))
+            oddfact1=1
+            oddfact2=1
+        if sym_type == "oe": 
+            symvect=[1,-1]
+            oddfact1=1
+            oddfact2=0
+        if sym_type == "eo": 
+            symvect=[-1,1]
+            oddfact1=0
+            oddfact2=1
+            
+        sidelength = int((self.r+1)//2)+1
+        z=[None]*(sidelength-oddfact2)
+        j=0
+        #print(z)
+        for i in range(0,sidelength-oddfact1):
+            v_t = np.zeros(sidelength-oddfact1)
+            for k in range(0,sidelength-oddfact2):
+                if self.xymap[i][k] == 1:
+                    v_t[k] = v[j]
+                    j+=1
+            z[i] = (v_t[::])
+            #print(z[i])
+        z = np.array(z)
+        z_t = np.zeros((self.c,self.r))
+        for i in range(0,self.c):
+            for j in range(0,self.r):
+                if i<sidelength-oddfact1 and j<sidelength-oddfact2: z_t[i][j] = z[i][j]
+                if i<sidelength-oddfact1 and j>=sidelength-1-oddfact2: z_t[i][j] += z[i][self.c-1-j]
+                if i>=sidelength-1-oddfact1 and j<sidelength-oddfact2: z_t[i][j] += z[self.r-1-i][j]
+                if i>=sidelength-1-oddfact1 and j>=sidelength-1-oddfact2: z_t[i][j] += z[self.r-1-i][self.c-1-j]
+                if i==sidelength-2: z_t[i][j] = z_t[i][j]/np.sqrt(2)
+                if j==sidelength-2: z_t[i][j] = z_t[i][j]/np.sqrt(2)
+        
+        
+        
+        # normalisation and shit
+        z = z_t
+        zero = np.zeros(((self.r+2), (self.c+2)))
+        for i in range(0,self.r):
+            for j in range(0,self.c): 
+                np.put(zero[i+1], [j+1], z[i][j])
+        z = zero*zero
+        Ix=[]
+        for i in range(0,self.r+2):
+            Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
+        I = scipy.integrate.simps(Ix, x=yt)
+        z=z/I
+        
+        return z
+        
+        
+    
+    def arrayFromZ(self, v, xt, yt):
+        z=[None]*self.r
+        j=0
+        for i in range(0,self.r):
+            v_t = np.zeros(self.c)
+            for k in range(0,self.c):
+                if self.xymap[i][k] == 1:
+                    v_t[k] = v[j]
+                    j+=1
+            z[i] = (v_t[0:self.c])
+            #print(z[i])
+        z = np.array(z)
+        zero = np.zeros(((self.r+2), (self.c+2)))
+        for i in range(0,self.r):
+            for j in range(0,self.c): 
+                np.put(zero[i+1], [j+1], z[i][j])
+        z = zero*zero
+        Ix=[]
+        for i in range(0,self.r+2):
+            Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
+        I = scipy.integrate.simps(Ix, x=yt)
+        z=z/I
+        return z
+    
+    def delta3(self, redE, nt, redPolyN):
+        a,b = np.polyfit(redE, nt, 1)
+        varDelta3 = []
+        l = len(redE)
+        for c in range(4*l//10,6*l//10):#(l//10, 9*l//10):
+            temp=[]
+            for L in range(1,4*l//10):#l//10+1):
+                r = redE[c-L:c+L]
+                t=((nt[c-L:c+L] - redPolyN(redE[c-L:c+L]))**2)
+                temp.append(scipy.integrate.simps(t, x=r)/L)
+            varDelta3.append(temp)
+        Delta3=np.sum(varDelta3, axis=0)
+        for j in range(0,len(Delta3)):
+            Delta3[j] = Delta3[j] / (len(varDelta3))
+        return Delta3 
+            
+    ################################# PLOTTING #################################
+       
+    def plotMap(self):
+        fig = plt.figure(figsize=(15,15))
+        plt.plot(self.xmap, self.ymap, 'ro')
+        plt.title('Points', fontsize=self.plottextsize+2)
+        plt.xlim(0,max(self.xmap)+1)
+        plt.ylim(0,max(self.ymap)+1)
+        plt.xlabel('$x$',fontsize=self.plottextsize+2)
+        plt.ylabel('$y$',fontsize=self.plottextsize+2)
+        plt.show()
+        fig.savefig('Map.png')
+
+    def plot2Dpsi(self, X,Y,z,m): 
+        fig = plt.figure(figsize=(14,12))
+        ax = fig.add_subplot(111, projection='3d')
+        surf = ax.plot_surface(X,Y,z, cmap=cm.coolwarm, cstride=1, rstride=1)
+        fig.colorbar(surf)
+        plt.xlabel('$x_i$',fontsize=self.plottextsize+2)
+        plt.ylabel('$y_i$',fontsize=self.plottextsize+2)
+        ax.set_zlabel('$|\psi|^2$',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_%i.png' %m)
+        
+    def plotEnergies(self,nt, E):
+        fig = plt.figure(figsize=(15,10))
+        plt.plot(nt, E, label='Numeric')
+        plt.title('Energy vs n', fontsize=self.plottextsize+2)
+        plt.xlabel('$n$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Energy$',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('2D_E_vs_n.png')  
+        
+    def plotN(self, E,polyN, nt):
+        fig = plt.figure(figsize=(15,10))
+        plt.plot(polyN(E), E, label='Polynomial fit')
+        plt.plot(nt, E, label='Numeric')
+        plt.title('n vs Energy', fontsize=self.plottextsize+2)
+        plt.xlabel('n',fontsize=self.plottextsize+2)
+        plt.ylabel('Energy',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_E.png')
+        
+    def plotPolyN(self, nt, polyN, E):
+        fig = plt.figure(figsize=(15,10))
+        plt.plot(nt, polyN(E), label='Polynomial fit')
+        plt.plot(nt,nt, label='Perfect fit')
+        plt.title('n vs Polynomial fit in n', fontsize=self.plottextsize+2)
+        plt.xlabel('n',fontsize=self.plottextsize+2)
+        plt.ylabel('Polynomial fit in n',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_polyn.png')
+        
+    def plotDelta(self, nt, PolyN, E, sym_type):
+        delta=[]
+        ntt = []
+        for i in range(0,len(nt)-1):
+            delta.append(abs(PolyN(E[i+1])-PolyN(E[i])))
+            ntt.append(nt[i]-nt[0])
+        fig = plt.figure(figsize=(15,10))
+        entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='bar', normed=True, label='Delta = n($E_{i+1}$) - n($E_{i}$)')
+        x = 0.5*(bin_edges[1:] + bin_edges[:-1])
+        y = entries
+        # hacky way of ignoring empty bins 
+        # Note: ROOT does this for least squares fits to histograms
+        xy=[]
+        xy.append(x)
+        xy.append(y)        
+        x = xy[0][xy[1]!=0]
+        y = xy[1][xy[1]!=0]
+        def fitfunc(x, *p):
+            return p[0]*(x**p[1])*np.exp(-(x**(p[1]+1))/p[2])
+        init = [1.2,0,1.2]
+        sigma_y = np.sqrt(y)  # Adding Poisson errors in y
+        popt, pcov  = curve_fit(fitfunc, x, y, p0=init, sigma=sigma_y, absolute_sigma=False)
+        c = popt
+        c_err = np.sqrt(np.diag(pcov))
+        print('Fit Coefficients: {}, {}, {}'.format(c[0],c[1],c[2]))
+        x_hd = np.linspace(0,bin_edges[-1],100)
+        x=x_hd        
+        plt.plot(x, fitfunc(x, *c), label='Fit: b = %1.3f \u00B1 %1.3f' %(c[1], c_err[1]) )
+        dn=[]
+        for i in range(0,len(nt)-1):
+            dn.append(PolyN(E[i+1])-PolyN(E[i]))
+        D = np.mean(dn)
+        print('Average nearest neighbour spacing, D: %f' %D)
+        
+        Ps = (1/D)*np.exp(-x/D)
+        plt.plot(x, Ps, label='Poisson')
+        Pw = ((np.pi*x)/(2*D**2))*np.exp((-np.pi*x**2)/(4*D**2))
+        plt.plot(x, Pw, label='Wigner')
+        plt.title('Delta histogram, %s iterations (3^%s)' %(self.iterations_label,self.m), fontsize=self.plottextsize+2)
+        plt.ylabel('Frequency',fontsize=self.plottextsize+2)
+        plt.xlabel('Delta',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('Delta_plots/%s/nbar_hist_%s_%s.png' %(sym_type, self.r, self.iterations_label))
+        filename = 'Delta_plots/%s/parameters.txt' %sym_type
+        par_file = open(filename, 'a')
+        par_file.write('%i\t%i\t%f\t%f\t%f\n' %(self.r,self.c,c[0],c[1],c[2]))
+        par_file.close()
+        return c[1], c_err[1]        
+        
+
+    def masking(self, z):
+        # Masking usually works with quads, this is a hacky way of preserving boundary zeros
+        # although it doesn't work correctly anyway, needs to mask until half way between points. SHIT.
+        for i in range(1,self.c+1):
+            for j in range(1,self.c+1):
+                if z[i][j]==0:
+                    if z[i+1][j]==0 and z[i-1][j]==0 and z[i][j-1]==0 and z[i][j+1]==0:
+                        z[i][j] = np.nan
+            
+        return z   
+        
+    def plotContour(self,X,Y,z, m):
+        fig = plt.figure(figsize=(15,15))
+        
+        # overlay the well - bit fucked, especially for smaller numbers of points
+        #z[ z==0 ] = np.nan              # convert zeros to Nan for masking TOO BIG
+        #z = self.masking(z)             # mask internal zeros only TOO SMALL
+        # should probably create a subplot using internal zeros of z with twice as many points
+        # either that or just write a function that defines centres and sizes of all squares; cba
+        
+        
+        no_bins = 500
+        lev = np.linspace(0,np.nanmax(z),no_bins)
+        plt.gca().patch.set_color('1')
+        my_cmap = plt.cm.get_cmap('gist_rainbow')
+        plt.contourf(X, Y, z, levels = lev , cmap=my_cmap)
+        #z_min, z_max = 0, np.abs(z).max()
+        #plt.pcolormesh(X, Y, z, cmap=my_cmap, vmin=z_min, vmax=z_max)
+        plt.title('Contour plot for %ith energy' %m, fontsize=self.plottextsize+10)
+        plt.xlabel('$x$',fontsize=self.plottextsize+12)
+        plt.ylabel('$y$',fontsize=self.plottextsize+12)
+        #plt.colorbar()
+        plt.show()
+        fig.savefig('Contour_%i_%s_%s.png' %(m, self.r, self.iterations_label))
+            
+    def plotDelta3(self, delta3):
+        fig = plt.figure(figsize=(15,10))
+        L = np.linspace(1, len(delta3), len(delta3))
+        plt.plot(L, delta3, label='Delta-3')
+        plt.title('Delta-3 vs L', fontsize=self.plottextsize+2)
+        plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
+        plt.xlim(0, max(L))
+        plt.legend()
+        plt.show()
+        fig.savefig('Delta-3.png')
