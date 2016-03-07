@@ -9,17 +9,17 @@ import numpy as np
 np.set_printoptions(threshold=np.nan)
 from numpy import linalg
 from scipy import sparse
-import SP_TRIfn as SPfn
+import SP_TRI_2ndFn as SPfn
 
 # c and r must be 3^m
-m = 4
+m = 3
 a=0.1
-no_iterations = 2                # from 0->4
+no_iterations = 1                # from 0->4
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
 qcf = SPfn.QC(m,a,no_iterations)      # create object
 qcf.CreateMap5()                         # find which points lie inside
-qcf.createEmap
+qcf.createEmap()
 qcf.plotMap()
 qcf.FillM()                         # generates lists of indices of borders
 qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
@@ -29,7 +29,7 @@ print(qcf.Q)
 
 
 
-H = qcf.genMatrix(sparseflag=UseSparseMatrices)
+H = qcf.genMatrix5(sparseflag=UseSparseMatrices)
 N = len(qcf.Q[0])
 sH = np.zeros((N,N))
 H_sym=[]
