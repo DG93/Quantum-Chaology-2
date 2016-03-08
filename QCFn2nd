@@ -190,28 +190,10 @@ def arrayFromZ(v, c, r, xt, yt):
         Ix.append(integrate.simps(z[i,:], x=xt))    
     I = integrate.simps(Ix, x=yt)
     z=z/I
-    print(z)
+    #print(z)
     return z
     
-def arrayFromZ5(v, c, r, xt, yt):
-    # Reshape the eigenvector
-    z = v.reshape((r,c))
-    # Add in boundary conditions
-    z = np.insert(z,0,0,axis=1)
-    z = np.insert(z,c+1,0,axis=1)
-    z = np.insert(z,0,0,axis=0)
-    zero = np.zeros((1,c+2))
-    z = np.append(z,zero,axis=0)
-    z = z*z
-    Ix=[]
-    for i in range(0,r+2):
-        Ix.append(integrate.simps(z[i,:], x=xt))    
-    I = integrate.simps(Ix, x=yt)
-    z=z/I
-    print(z)
-    return z
-    
-#######################################################################
+############################# PLOTTING ######################################
     
 def plotMap(xmap,ymap):
     fig = plt.figure(figsize=(15,15))
