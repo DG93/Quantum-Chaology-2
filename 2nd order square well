@@ -14,13 +14,12 @@ import time
 t0 = time.clock()
 Sparseflag = False
 m = 2
-c = 5#3**m #int(input("Enter number of points in x axis: "))
+c = 51#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
 x=a*c #float(input("Enter width (x axis) of well: "))
 y=b*r #float(input("Enter depth (y axis) of well: "))
-#n = r*c # only used for energies
 xt = np.linspace(0,x,c+2)
 yt = np.linspace(0,y,r+2)
 X, Y = np.meshgrid(xt, yt)
@@ -29,24 +28,24 @@ ymap=[]
 emap=[]
 w2=[]
 v2=[]
-    
-# Generate 2nd order
 xmap,ymap=qcf.CreateMap(r,c)
 qcf.plotMap(xmap,ymap)
+
+# Generate 2nd order
 emap = qcf.createEmap(xmap,ymap,r,c)
 #print(emap)
 W,Ws=qcf.genMatrix5(xmap,ymap,emap,c,r,Sparseflag)
-print(W)
-w2, v2 = linalg.eig(W)
+#print(W)
+w2,v2 = linalg.eigh(W)
 
 # Generate 1st order
 W1=qcf.genMatrix(xmap,ymap)
-print(W1)   
-w1,v1 = linalg.eig(W1)
+#print(W1)   
+w1,v1 = linalg.eigh(W1)
 
 # Sparse matrices
 if Sparseflag == True:
-    k=c
+    k=5
     w, v = sp.eigsh(Ws,k,which='SM')   
 
 # Plot contours + energies
@@ -55,11 +54,11 @@ E1=[]
 E2=[]
 width = max(xmap)
 spacing = a
-n_range = 1#len(w2)
+n_range = 500#len(w2)
 for m in range(0,n_range):
     # 2nd order
     state_ind2 = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
-    z2 = qcf.arrayFromZ5(v2[:,state_ind2], c, r, xt, yt)
+    z2 = qcf.arrayFromZ(v2[:,state_ind2], c, r, xt, yt)
     e2 = ((w2[state_ind2])/24)
     E2.append(e2)
     #qcf.plotContour(X,Y,z2,m,2)
@@ -68,7 +67,7 @@ for m in range(0,n_range):
     z1 = qcf.arrayFromZ(v1[:,state_ind1], c, r, xt, yt)
     e1 = (w1[state_ind1]/2)
     E1.append(e1)
-    #qcf.plotContour(X1,Y1,z1,m,1)
+    #qcf.plotContour(X,Y,z1,m,1)
 
 # Calculate analytic energies
 for nx in range(0,int(np.sqrt(n_range))+1):
