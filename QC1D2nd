@@ -1,0 +1,164 @@
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import scipy.integrate
+import matplotlib.pyplot as plt
+from numpy import linalg
+from math import sqrt
+
+def OE(state):
+    if state%2 == 0:
+        return 1
+    else:
+        return -1
+
+def delta(x,a):
+    if x==a:
+        return 1
+    else:
+        return 0
+    
+def genMatrix(n):
+    H = np.zeros((n,n))
+    i,j = np.indices(H.shape)
+    H[i==j] = 2.
+    H[i==j-1] = -1.
+    H[i==j+1] = -1.
+    return H
+
+def genMatrix2(n):
+    H = np.zeros((n,n))
+    i,j = np.indices(H.shape)
+    H[i==j] = 30.
+    H[i==j-1] = -16.
+    H[i==j+1] = -16.
+    H[i==j-2] = 1.
+    H[i==j+2] = 1.
+    H[0,n-1] = -1.
+    H[n-1,0] = -1.
+    return H
+
+def redMatrix(H,N,oe):
+    M=N-1
+    sH = np.zeros((N,N))
+    for j in range(0,N):
+        for i in range(0,N):
+            sH[i,j] = (H[M+i,M+j]+oe*H[M-i,M+j]+oe*H[M+i,M-j]+H[M-i,M-j])/(sqrt(1+delta(j,0))*sqrt(1+delta(i,0)))
+    return sH
+    
+def genWvf(v,n,state_ind):
+    c=[0]
+    for y in range(0,n):
+        c.append(v[y,state_ind])
+    c.append(0)
+    return c
+    
+def mirrorWvf(sc):
+    sc.pop(0)
+    rev = sc[:]
+    rev.reverse()
+    ssc=[0]*(2*len(sc)-1)
+    L = int(len(ssc)/2)
+    for i in range(0,L+1):
+            ssc[i] = ssc[i] + rev[i]
+            ssc[i+int(len(ssc)/2)] = ssc[i+int(len(ssc)/2)] + sc[i]
+    ssc[L] = ssc[L]/sqrt(2)
+    return ssc
+    
+def genProb(c, l, n):
+    C = []
+    for i in range(0,len(c)):
+        C.append(c[i]*c[i])
+    xt = np.linspace(0,l,n+2)
+    I = scipy.integrate.simps(C, x=xt)
+    C = C/I
+    return C
+        
+def probError(c, sigma_psi):
+    sigma_p = []
+    for i in range(0,len(c)):
+        sigma_p.append(2*c[i]*sigma_psi)
+    return sigma_p
+    
+def discEnError(n,sigma_psi,v,w):
+    h = np.zeros((n,n))
+    i,j = np.indices(h.shape)
+    h[i,j] = sigma_psi
+    delta_l = np.dot(np.dot(linalg.inv(v),h),v)
+    #print(delta_l)
+    i,j = np.indices(delta_l.shape)
+    sigma_l = delta_l[i==j]
+    #print(sigma_l)
+    sigma_l = [x for (y,x) in sorted(zip(w,sigma_l))]
+    return sigma_l
+    
+def printE(n,N,w,l,a,state,energy):
+    nt = np.linspace(1,n,N)
+    E = sorted(w/2)
+    tot_ans_energy = ( ((((nt)*np.pi)/l)**2)/ (2) )*a**2
+    E_diff = np.absolute(E - tot_ans_energy)
+    print('Energy state = %s' % str(state+1))
+    print('Discrete energy = %s' % (energy))
+    print('Energy difference = %s' % E_diff[state])
+
+def plotProb(l,n,C,C2,state,ansatz):
+    xt = np.linspace(0,l,n+2)
+    fig = plt.figure(figsize=(15,10))
+    plt.plot(xt, C, label='1st order')
+    plt.plot(xt,ansatz,label="Ansatz")
+    plt.plot(xt, C2, label='2nd order')
+    plt.xlabel('$x_i$',fontsize=40)
+    plt.tick_params(axis='x', labelsize=20)
+    plt.ylabel('$|\psi(x_i)|^2$',fontsize=40)
+    plt.tick_params(axis='y', labelsize=20)
+    plt.ylim(0,2)
+    plt.title('Level %i' %state, fontsize=30)
+    plt.legend()
+    plt.show()
+    fig.savefig('1Dsqwell_%s.png' % str(state+1))
+    
+def plotDiff(l,n,C,ansatz,state):
+    xt = np.linspace(0,l,n+2)
+    diff = C-ansatz
+    fig2 = plt.figure(figsize=(15,10))
+    plt.plot(xt, diff)
+    plt.title('Difference plot', fontsize=30)
+    plt.xlabel('$x_i$',fontsize=20)
+    plt.ylabel('$\psi(x_i)$',fontsize=20)
+    fig2.savefig('1Ddifference_%s.png' % str(state+1))
+    
+def plotEvN(n,w,w2,l,a):
+    E=sorted(w/2)
+    E2=sorted(w2/24)
+    nt = np.linspace(1,n,n)
+    Ea = ( ((((nt)*np.pi)/l)**2)/ (2) )*a**2
+    fig3 = plt.figure(figsize=(15,10))
+    plt.plot(nt, E, label='1st order')
+    plt.plot(nt, E2, label='2nd order')
+    plt.plot(nt, Ea, label='Analytic')
+    plt.xlim(0,n)
+    plt.title('Energy', fontsize=30)
+    plt.xlabel('$state, n$',fontsize=40)
+    plt.tick_params(axis='x', labelsize=20)
+    plt.ylabel('$Energy$',fontsize=40)
+    plt.tick_params(axis='y', labelsize=20)
+    plt.legend(prop={'size':20})
+    plt.show()
+    fig3.savefig('1D_E_vs_state.png')
+    
+def plotEdiff(n,N, w,l,a):
+    nt = np.linspace(1,n,N)
+    E = sorted(w/2)
+    tot_ans_energy = ( ((((nt)*np.pi)/l)**2)/ (2) )*a**2
+    E_diff = np.absolute(E - tot_ans_energy)
+    fig4  = plt.figure(figsize=(15,10))
+    #plt.plot(nt, sigma_l, label='Discrete Energy Error')
+    plt.plot(nt, E_diff, label='Energy difference')
+    #plt.xlim(0,n/10)
+    #plt.ylim(-0.005,0.005)
+    plt.title('Energy Difference vs state', fontsize=30)
+    plt.xlabel('$State$',fontsize=20)
+    plt.ylabel('$Energy$',fontsize=20)
+    plt.legend()
+    plt.show()
+    fig4.savefig('1D_E_diff_vs_state.png')
