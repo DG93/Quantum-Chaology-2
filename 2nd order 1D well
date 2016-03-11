@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar 11 14:37:35 2016
+
+@author: DNSG
+"""
+import numpy as np
+from numpy import linalg
+from math import sqrt
+import QC1D2nd as qcf
+
+      
+n =1000#int(input("Enter an (odd) number of steps: "))
+l = 1#float(input("Enter width of well: "))
+state = 0#int(input("Enter energy state (GS=1): "))
+a = l/n
+# Ansatz probability wavefunction
+xt = np.linspace(0,l,n+2)
+ansatz = (sqrt((2/l))*np.sin(((state)*np.pi*xt)/l))**2
+# Ansatz energy
+k = ((state)*np.pi)/l
+Ea = ( (k**2)/ (2) )*a**2
+
+##################### NOT USING SYMMETRIES #####################
+
+##################### 1st Order ################################
+H = qcf.genMatrix(n)
+w, v = linalg.eig(H)
+# enumerate list and sort by eigenvalues
+# return index of relevant energy level
+state_ind = sorted(enumerate(w), key=lambda x: x[1])[state][0]
+# Wavefunction
+c = qcf.genWvf(v,n,state_ind)
+# Normalised Probability
+C = qcf.genProb(c, l, n)   
+# Calculate energy from eigenvalue
+E = (( (w[state_ind])/ (2) ))
+
+##################### 2nd Order ################################
+H2 = qcf.genMatrix2(n)
+w2, v2 = linalg.eig(H2)
+# enumerate list and sort by eigenvalues
+# return index of relevant energy level
+state_ind2 = sorted(enumerate(w2), key=lambda x: x[1])[state][0]
+# Wavefunction
+c2 = qcf.genWvf(v2,n,state_ind2)
+# Normalised Probability
+C2 = qcf.genProb(c2, l, n)   
+# Calculate energy from eigenvalue
+E2 = (( (w2[state_ind2])/ (24) ))
+
+
+####################### Plotting ##############################
+#qcf.plotProb(l,n,C,C2,state,ansatz)
+## Difference plot
+#qcf.plotDiff(l,n,C,ansatz,state)
+# Both energies plot
+qcf.plotEvN(n,w,w2,l,a)
+# Difference in energies plot
+#qcf.plotEdiff(n,n,w,l,a)
+# Print energies
+#qcf.printE(n,N,w,l,a,state,energy)
+
+
+##################### USING SYMMETRIES #####################
+"""
+oe = qcf.OE(state)
+N = int((n+1)/2)
+sH = qcf.redMatrix(H,N,oe)
+#print(sH)
+sw, sv = linalg.eig(sH)
+#print(v)
+#print(sv)
+s_state = int((state+1)/2)
+s_state_ind = sorted(enumerate(sw), key=lambda x: x[1])[s_state][0]
+sE = (( (sw[s_state_ind])/ (4) ))
+# Wavefunction
+sc = qcf.genWvf(sv,N,s_state_ind)
+ssc = qcf.mirrorWvf(sc)
+# Normalised Probability
+sC = qcf.genProb(ssc, l, n)
+s_sigma_p = qcf.probError(ssc, sigma_psi)
+# Plot
+qcf.plotProb(l,n,sC,state,s_sigma_p,ansatz, sE, ans_energy, a)
+# Difference plot
+qcf.plotDiff(l,n,sC,ansatz,state)
+# Both energies plot
+qcf.plotEvN(n,N,sw/2,l,a)
+# Difference in energies plot
+qcf.plotEdiff(n,N,sw/2,l,a)
+# Print energies
+qcf.printE(n,N,sw/2,l,a,s_state,sE)
+"""
