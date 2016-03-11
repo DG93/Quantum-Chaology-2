@@ -239,7 +239,7 @@ def plotEnergies(nt, Ea, E1, E2):
     plt.tick_params(axis='x', labelsize=20)
     plt.ylabel('$Energy$',fontsize=40)
     plt.tick_params(axis='y', labelsize=20)
-    plt.legend(prop={'size':20})
+    plt.legend(prop={'size':20},loc=2)
     plt.show()
     fig.savefig('2D_E_vs_n.png')
     
