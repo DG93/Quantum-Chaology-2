@@ -71,7 +71,7 @@ for m in range(0,n_range):
 # Calculate analytic energies
 for nx in range(0,int(np.sqrt(n_range))+1):
     for ny in range(0,int(np.sqrt(n_range))+1):
-        ea = (((np.pi**2)*(a**4))/2)*((((nx)**2)/r**2)+(((ny)**2)/c**2))
+        ea = ((np.pi**2)/2)*((((nx)**2)/r**2)+(((ny)**2)/c**2))
         Ea.append(ea)
 Ea=sorted(Ea)
 print(Ea[0],E1[0],E2[0]) 
