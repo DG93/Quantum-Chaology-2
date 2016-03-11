@@ -138,7 +138,7 @@ def plotEvN(n,w,w2,l,a):
     plt.plot(nt, Ea, label='Analytic')
     plt.xlim(0,n)
     plt.title('Energy', fontsize=30)
-    plt.xlabel('$state, n$',fontsize=40)
+    plt.xlabel('$n$',fontsize=40)
     plt.tick_params(axis='x', labelsize=20)
     plt.ylabel('$Energy$',fontsize=40)
     plt.tick_params(axis='y', labelsize=20)
