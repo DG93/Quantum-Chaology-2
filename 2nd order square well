@@ -53,7 +53,7 @@ if Sparseflag == True:
 Ea=[]
 E1=[]
 E2=[]
-n_range = 300
+n_range = 1000
 for m in range(0,n_range):
     # 2nd order
     state_ind2 = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
@@ -69,8 +69,8 @@ for m in range(0,n_range):
     #qcf.plotContour(X,Y,z1,m,1)
 
 # Calculate analytic energies
-for nx in range(0,int(np.sqrt(n_range))+1):
-    for ny in range(0,int(np.sqrt(n_range))+1):
+for nx in range(0,n_range): # range must be large to allow sorting
+    for ny in range(0,n_range):
         ea = ((np.pi**2)/2)*((((nx)**2)/r**2)+(((ny)**2)/c**2))
         Ea.append(ea)
 Ea=sorted(Ea)
@@ -78,6 +78,6 @@ print(Ea[0],E1[0],E2[0])
 n=len(E2)
 nt = np.linspace(0,n-1,n)
 qcf.plotEnergies(nt, Ea[0:n], E1[0:n], E2[0:n])
-#qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n])
+qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n])
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
