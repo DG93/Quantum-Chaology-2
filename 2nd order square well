@@ -77,7 +77,7 @@ Ea=sorted(Ea)
 print(Ea[0],E1[0],E2[0]) 
 n=len(E2)
 nt = np.linspace(0,n-1,n)
-qcf.plotEnergies(nt, Ea[0:n], E1[0:n], E2[0:n])
+qcf.plotEnergies(n_range, nt, Ea[0:n], E1[0:n], E2[0:n])
 qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n])
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
