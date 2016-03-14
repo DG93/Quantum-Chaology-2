@@ -64,7 +64,7 @@ Ea=[]
 E1=[]
 E2=[]
 E3=[]
-n_range = 1000
+n_range = 10
 for m in range(0,n_range):
     #3rd order
     state_ind3 = sorted(enumerate(w3), key=lambda x: x[1])[m][0]
@@ -92,9 +92,9 @@ for nx in range(0,n_range): # range must be large to allow sorting
         Ea.append(ea)
 Ea=sorted(Ea)
 print(Ea[0],E1[0],E2[0],E3[0]) 
-n=len(E2)
+n=n_range
 nt = np.linspace(0,n-1,n)
-qcf.plotEnergies(nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
-#qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n])
+qcf.plotEnergies(n_range, nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
+qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
