@@ -360,7 +360,7 @@ def plotContour(X,Y,z,m,s):
     plt.show()
     fig.savefig('Contour_%i.png' %(m))
     
-def plotEnergies(nt, Ea, E1, E2, E3):
+def plotEnergies(s, nt, Ea, E1, E2, E3):
     fig = plt.figure(figsize=(15,10))
     plt.plot(nt, Ea, label='Analytic')
     plt.plot(nt, E1, label='1st order')
@@ -374,17 +374,20 @@ def plotEnergies(nt, Ea, E1, E2, E3):
     plt.tick_params(axis='y', labelsize=20)
     plt.legend(prop={'size':20},loc=2)
     plt.show()
-    fig.savefig('2D_E_vs_n.png')
+    fig.savefig('2D_E_vs_n_%i.png' %s)
     
-def plotEnergyDiff(nt, Ea, E1, E2):
+def plotEnergyDiff(nt, Ea, E1, E2, E3):
     fig = plt.figure(figsize=(15,10))
     D1=[]
     D2=[]
+    D3=[]
     for i in range(0,len(nt)):
         D1.append(abs(E1[i]-Ea[i]))
         D2.append(abs(E2[i]-Ea[i]))
+        D3.append(abs(E3[i]-Ea[i]))
     plt.plot(nt, D1, label='1st order')
     plt.plot(nt, D2, label='2nd order')
+    plt.plot(nt, D3, label='3rd order')
     plt.title('Energy Difference vs n', fontsize=30)
     plt.xlabel('$n$',fontsize=20)
     plt.ylabel('$Energy Difference$',fontsize=20)
