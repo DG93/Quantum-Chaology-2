@@ -1,0 +1,393 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Oct 13 14:03:57 2015
+
+@author: mbyx9dl2
+"""
+import numpy as np
+from scipy import integrate
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from scipy import sparse
+    
+def I(i,j,c):
+    I=0
+    for k in range(0,j-1):
+        I=I+c
+    I=I+i
+    return I
+    
+def ij(I,c):
+    k=0
+    while I-c>0:
+        I=I-c
+        k=k+1
+    j=k+1
+    i=I
+    return i,j
+    
+def createEmap(xmap,ymap,r,c):
+    emap=[]
+    for i in range(0,len(xmap)):
+        emap_t=[]
+        a=xmap[i]
+        b=ymap[i]
+        if a==c or b==r or b==1 or a==1:
+            if a==c: emap_t.append(1)
+            if b==r: emap_t.append(2)
+            if b==1: emap_t.append(3)
+            if a==1: emap_t.append(4)
+        else: emap_t.append(0)
+        emap.append(emap_t)
+    return emap
+
+def createEmap3(xmap,ymap,r,c):
+    emap=[]
+    for i in range(0,len(xmap)):
+        emap_t=[]
+        a=xmap[i]
+        b=ymap[i]
+        if a==c or b==r or b==1 or a==1 or a==c-1 or b==r-1 or b==2 or a==2:
+            if a==c: emap_t.append(1)
+            if b==r: emap_t.append(2)
+            if b==1: emap_t.append(3)
+            if a==1: emap_t.append(4)
+            if a==c-1: emap_t.append(5)
+            if b==r-1: emap_t.append(6)
+            if b==2: emap_t.append(7)
+            if a==2: emap_t.append(8)
+        else: emap_t.append(0)
+        emap.append(emap_t)
+    return emap
+    
+def CreateMap(r,c):
+    xmap=[]
+    ymap=[]
+    for i in range(1,r+1):
+        for j in range(1,c+1):
+            ymap.append(j)
+            xmap.append(i)
+    return xmap,ymap
+    
+def genMatrix(i,j):
+    M = []
+    for marker in range(0,len(i)):
+        R=[None]*len(i)
+        for k in range(0, len(i)):
+            if marker == 0:
+                if k == marker:
+                    R[k] = 4.
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] = -1
+                else:
+                    R[k] = 0                    
+            elif marker == (len(i)-1):
+                if k == marker:
+                    R[k] = 4
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] = -1        
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] = -1
+                else:
+                    R[k] = 0                    
+            else:
+                if k == marker:
+                    R[k] = 4
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] = -1
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] = -1
+                else:
+                    R[k] = 0
+        M.append(R)
+    M = np.array(M)
+    return M
+
+def genMatrix2(i,j,emap,c,r,sparseflag):
+    X=60.
+    Y=-16.
+    Z=1.
+    M = []
+    for marker in range(0,len(i)):
+        R=[0]*len(i)
+        for k in range(0,len(i)):
+            if marker == 0:
+                if k == marker:
+                    R[k] += X
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] += Y
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] += Y
+                elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                    R[k] += Z
+                elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                    R[k] += Z
+                else:
+                    R[k] += 0                    
+            elif marker == (len(i)-1):
+                if k == marker:
+                    R[k] += X
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] += Y        
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] += Y
+                elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                    R[k] += Z        
+                elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                    R[k] += Z
+                else:
+                    R[k] += 0                    
+            else:
+                if k == marker:
+                    R[k] += X
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] += Y
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] += Y
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] += Y
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] += Y
+                elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                    R[k] += Z
+                elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                    R[k] += Z
+                elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                    R[k] += Z
+                elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                    R[k] += Z
+                else:
+                    R[k] += 0
+        M.append(R)
+    M = np.array(M)
+    
+    # Add images
+    Im=-Z
+    for k in range(0,len(emap)):
+        i,j=ij(k+1,c)
+        for n in range(0,len(emap[k])):
+            if emap[k][n]==1:
+                #print(i,j,I(i,j-c+1,c)-1,k)
+                M[I(i,j-c+1,c)-1,k]+=Im
+
+            if emap[k][n]==2:
+                #print(i,j,I(i-r+1,j,c)-1,k)
+                M[I(i-r+1,j,c)-1,k]+=Im
+
+            if emap[k][n]==3:
+                #print(i,j,I(i+r-1,j,c)-1,k)
+                M[I(i+r-1,j,c)-1,k]+=Im
+
+            if emap[k][n]==4:
+                #print(i,j,I(i,j+c-1,c)-1,k)
+                M[I(i,j+c-1,c)-1,k]+=Im
+    N = M.tolist()        
+    N = sparse.csr_matrix(N)
+    return M,N
+    
+def genMatrix3(i,j,emap,c,r,sparseflag):
+    A=980.
+    B=-270.
+    C=27.
+    D=-2.
+    M = []
+    for marker in range(0,len(i)):
+        R=[0]*len(i)
+        for k in range(0,len(i)):
+            if marker == 0:
+                if k == marker:
+                    R[k] += A
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] += B
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] += B
+                elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                    R[k] += C
+                elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                    R[k] += C
+                elif (i[k] == i[marker]+3 and j[k] == j[marker]):
+                    R[k] += D
+                elif (i[k] == i[marker] and j[k] == j[marker]+3):
+                    R[k] += D
+                else:
+                    R[k] += 0                    
+            elif marker == (len(i)-1):
+                if k == marker:
+                    R[k] += A
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] += B        
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] += B
+                elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                    R[k] += C        
+                elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                    R[k] += C
+                elif (i[k] == i[marker]-3 and j[k] == j[marker]):
+                    R[k] += D        
+                elif (i[k] == i[marker] and j[k] == j[marker]-3):
+                    R[k] += D
+                else:
+                    R[k] += 0                    
+            else:
+                if k == marker:
+                    R[k] += A
+                elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                    R[k] += B
+                elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                    R[k] += B
+                elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                    R[k] += B
+                elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                    R[k] += B
+                elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                    R[k] += C
+                elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                    R[k] += C
+                elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                    R[k] += C
+                elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                    R[k] += C
+                elif (i[k] == i[marker]+3 and j[k] == j[marker]):
+                    R[k] += D
+                elif (i[k] == i[marker]-3 and j[k] == j[marker]):
+                    R[k] += D
+                elif (i[k] == i[marker] and j[k] == j[marker]+3):
+                    R[k] += D
+                elif (i[k] == i[marker] and j[k] == j[marker]-3):
+                    R[k] += D
+                else:
+                    R[k] += 0
+        M.append(R)
+    M = np.array(M)
+    
+    # Add images
+    Im=-C
+    Im2=-D
+    for k in range(0,len(emap)):
+        i,j=ij(k+1,c)
+        for n in range(0,len(emap[k])):
+            if emap[k][n]==1:
+                #print(i,j,I(i,j-c+1,c)-1,k)
+                M[I(i,j-c+1,c)-1,k]+=Im
+
+            if emap[k][n]==2:
+                #print(i,j,I(i-r+1,j,c)-1,k)
+                M[I(i-r+1,j,c)-1,k]+=Im
+
+            if emap[k][n]==3:
+                #print(i,j,I(i+r-1,j,c)-1,k)
+                M[I(i+r-1,j,c)-1,k]+=Im
+
+            if emap[k][n]==4:
+                #print(i,j,I(i,j+c-1,c)-1,k)
+                M[I(i,j+c-1,c)-1,k]+=Im
+                
+            if emap[k][n]==1 or emap[k][n]==5:
+                #print(i,j,I(i,j-c+2,c)-1,k)
+                M[I(i,j-c+2,c)-1,k]+=Im2
+
+            if emap[k][n]==2 or emap[k][n]==6:
+                #print(i,j,I(i-r+2,j,c)-1,k)
+                M[I(i-r+2,j,c)-1,k]+=Im2
+
+            if emap[k][n]==3 or emap[k][n]==7:
+                #print(i,j,I(i+r-2,j,c)-1,k)
+                M[I(i+r-2,j,c)-1,k]+=Im2
+
+            if emap[k][n]==4 or emap[k][n]==8:
+                #print(i,j,I(i,j+c-2,c)-1,k)
+                M[I(i,j+c-2,c)-1,k]+=Im2 
+    N = M.tolist()        
+    N = sparse.csr_matrix(N)
+    return M,N
+        
+def arrayFromZ(v, c, r, xt, yt):
+    # Reshape the eigenvector
+    z = v.reshape((r,c))
+    # Add in boundary conditions
+    z = np.insert(z,0,0,axis=1)
+    z = np.insert(z,c+1,0,axis=1)
+    z = np.insert(z,0,0,axis=0)
+    zero = np.zeros((1,c+2))
+    z = np.append(z,zero,axis=0 )
+    z = z*z
+    Ix=[]
+    for i in range(0,r+2):
+        Ix.append(integrate.simps(z[i,:], x=xt))    
+    I = integrate.simps(Ix, x=yt)
+    z=z/I
+    #print(z)
+    return z
+    
+############################# PLOTTING ######################################
+    
+def plotMap(xmap,ymap):
+    fig = plt.figure(figsize=(15,15))
+    plt.plot(xmap, ymap, 'ro')
+    plt.title('Points', fontsize=30)
+    plt.xlabel('$x$',fontsize=20)
+    plt.ylabel('$y$',fontsize=20)
+    plt.xlim(min(xmap)-1,max(xmap)+1)
+    plt.ylim(min(ymap)-1,max(ymap)+1)
+    plt.show()
+    fig.savefig('Map.png')
+
+def plot2Dpsi(X,Y,z):
+    fig = plt.figure(figsize=(10,8))
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(X,Y,z, cmap=cm.coolwarm, cstride=1, rstride=1)
+    fig.colorbar(surf)
+    plt.xlabel('$x_i$',fontsize=20)
+    plt.ylabel('$y_i$',fontsize=20)
+    ax.set_zlabel('$|\psi|^2$',fontsize=20)
+    plt.legend()
+    plt.show()
+    fig.savefig('2Dwell.png')
+    
+def plotContour(X,Y,z,m,s):
+    fig = plt.figure(figsize=(15,15))
+    plt.contourf(X, Y, z, 100, cmap=cm.gist_rainbow)
+    plt.title('Contour plot for energy level %i order %i' %(m,s), fontsize=14)
+    plt.xlabel('$x$',fontsize=20)
+    plt.ylabel('$y$',fontsize=20)
+    #plt.colorbar()
+    plt.show()
+    fig.savefig('Contour_%i.png' %(m))
+    
+def plotEnergies(nt, Ea, E1, E2, E3):
+    fig = plt.figure(figsize=(15,10))
+    plt.plot(nt, Ea, label='Analytic')
+    plt.plot(nt, E1, label='1st order')
+    plt.plot(nt, E2, label='2nd order')
+    plt.plot(nt, E3, label='3rd order')
+    plt.title('Energy vs n', fontsize=30)
+    plt.title('Energy', fontsize=30)
+    plt.xlabel('$n$',fontsize=40)
+    plt.tick_params(axis='x', labelsize=20)
+    plt.ylabel('$Energy$',fontsize=40)
+    plt.tick_params(axis='y', labelsize=20)
+    plt.legend(prop={'size':20},loc=2)
+    plt.show()
+    fig.savefig('2D_E_vs_n.png')
+    
+def plotEnergyDiff(nt, Ea, E1, E2):
+    fig = plt.figure(figsize=(15,10))
+    D1=[]
+    D2=[]
+    for i in range(0,len(nt)):
+        D1.append(abs(E1[i]-Ea[i]))
+        D2.append(abs(E2[i]-Ea[i]))
+    plt.plot(nt, D1, label='1st order')
+    plt.plot(nt, D2, label='2nd order')
+    plt.title('Energy Difference vs n', fontsize=30)
+    plt.xlabel('$n$',fontsize=20)
+    plt.ylabel('$Energy Difference$',fontsize=20)
+    plt.legend()
+    plt.show()
+    fig.savefig('2D_E_vs_n_diff.png')
