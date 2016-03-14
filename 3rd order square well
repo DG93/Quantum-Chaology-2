@@ -1,0 +1,100 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 30 17:35:32 2015
+
+2D infinite potential wells
+@author: Dan Goldsmith & Dan Locke
+"""
+import numpy as np
+from numpy import linalg
+import scipy.sparse.linalg as sp
+import QCFn2nd as qcf
+import time
+
+t0 = time.clock()
+Sparseflag = False
+m = 2
+c = 51#3**m #int(input("Enter number of points in x axis: "))
+r = c #int(input("Enter number points in y axis: "))
+a = 1 # spacing in x axis
+b=a # spacing in y axis
+x=a*c #float(input("Enter width (x axis) of well: "))
+y=b*r #float(input("Enter depth (y axis) of well: "))
+xt = np.linspace(0,x,c+2)
+yt = np.linspace(0,y,r+2)
+X, Y = np.meshgrid(xt, yt)
+xmap=[]
+ymap=[]
+emap=[]
+emap3=[]
+w2=[]
+v2=[]
+xmap,ymap=qcf.CreateMap(r,c)
+qcf.plotMap(xmap,ymap)
+
+# Generate 3rd order
+emap3 = qcf.createEmap3(xmap,ymap,r,c)
+#print(emap3)
+W3,Ws3=qcf.genMatrix3(xmap,ymap,emap3,c,r,Sparseflag)
+#print(W3)
+#print(Ws3)
+w3,v3 = linalg.eigh(W3)
+
+# Generate 2nd order
+emap = qcf.createEmap(xmap,ymap,r,c)
+#print(emap)
+W,Ws=qcf.genMatrix2(xmap,ymap,emap,c,r,Sparseflag)
+#print(W)
+#print(Ws)
+w2,v2 = linalg.eigh(W)
+
+# Generate 1st order
+W1=qcf.genMatrix(xmap,ymap)
+#print(W1)   
+w1,v1 = linalg.eigh(W1)
+
+# Sparse matrices
+if Sparseflag == True:
+    k=c
+    w2, v2 = sp.eigsh(Ws,k,which='SM')
+    w3, v3 = sp.eigsh(Ws3,k,which='SM')
+
+# Plot contours + energies
+Ea=[]
+E1=[]
+E2=[]
+E3=[]
+n_range = 1000
+for m in range(0,n_range):
+    #3rd order
+    state_ind3 = sorted(enumerate(w3), key=lambda x: x[1])[m][0]
+    z3 = qcf.arrayFromZ(v3[:,state_ind3], c, r, xt, yt)
+    e3 = ((w3[state_ind3])/360)
+    E3.append(e3)
+    #qcf.plotContour(X,Y,z2,m,2)
+    # 2nd order
+    state_ind2 = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
+    z2 = qcf.arrayFromZ(v2[:,state_ind2], c, r, xt, yt)
+    e2 = ((w2[state_ind2])/24)
+    E2.append(e2)
+    #qcf.plotContour(X,Y,z2,m,2)
+    # 1st order
+    state_ind1 = sorted(enumerate(w1), key=lambda x: x[1])[m][0]
+    z1 = qcf.arrayFromZ(v1[:,state_ind1], c, r, xt, yt)
+    e1 = (w1[state_ind1]/2)
+    E1.append(e1)
+    #qcf.plotContour(X,Y,z1,m,1)
+
+# Calculate analytic energies
+for nx in range(0,n_range): # range must be large to allow sorting
+    for ny in range(0,n_range):
+        ea = ((np.pi**2)/2)*((((nx)**2)/r**2)+(((ny)**2)/c**2))
+        Ea.append(ea)
+Ea=sorted(Ea)
+print(Ea[0],E1[0],E2[0],E3[0]) 
+n=len(E2)
+nt = np.linspace(0,n-1,n)
+qcf.plotEnergies(nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
+#qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n])
+comp_time = (time.clock()-t0)/60.0
+print("Time taken: %f mins" %comp_time)
