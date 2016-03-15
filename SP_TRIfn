@@ -127,7 +127,7 @@ class QC:
         i = self.xmap
         sidelength = (self.c+1)//2
         no_points = len(i)
-        self.Q=[[] for x in xrange(8)]
+        self.Q=[[] for x in range(8)]
 
         for i in range(0,sidelength):
             for j in range(0,sidelength):
