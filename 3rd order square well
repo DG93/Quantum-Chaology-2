@@ -8,7 +8,7 @@ Created on Wed Sep 30 17:35:32 2015
 import numpy as np
 from numpy import linalg
 import scipy.sparse.linalg as sp
-import QCFn2nd as qcf
+import QCFn3rd as qcf
 import time
 
 t0 = time.clock()
@@ -64,7 +64,7 @@ Ea=[]
 E1=[]
 E2=[]
 E3=[]
-n_range = 10
+n_range = 1000
 for m in range(0,n_range):
     #3rd order
     state_ind3 = sorted(enumerate(w3), key=lambda x: x[1])[m][0]
@@ -86,8 +86,8 @@ for m in range(0,n_range):
     #qcf.plotContour(X,Y,z1,m,1)
 
 # Calculate analytic energies
-for nx in range(0,n_range): # range must be large to allow sorting
-    for ny in range(0,n_range):
+for nx in range(1,n_range+1): # range must be large to allow sorting
+    for ny in range(1,n_range+1):
         ea = ((np.pi**2)/2)*((((nx)**2)/r**2)+(((ny)**2)/c**2))
         Ea.append(ea)
 Ea=sorted(Ea)
