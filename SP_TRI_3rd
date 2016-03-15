@@ -1,0 +1,102 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 30 17:35:32 2015
+
+2D Sierpinski Carpet
+@author: Dan Goldsmith & Dan Locke
+"""
+import numpy as np
+np.set_printoptions(threshold=np.nan)
+from numpy import linalg
+import SP_TRIfn_3rd as SPfn
+
+# c and r must be 3^m
+m = 2
+a=0.1
+no_iterations = 1               # from 0->4
+UseSparseMatrices = False
+sym_type=[1,1,1,1] # 1 is odd, 0 is even
+qcf = SPfn.QC(m,a,no_iterations)      # create object
+qcf.CreateMap()                         # find which points lie inside
+qcf.plotMap()
+qcf.createEmap()
+qcf.FillM()                         # generates lists of indices of borders
+qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
+qcf.CreateQs()
+#print(qcf.Q)
+#print(qcf.Umap)
+#print(qcf.emap)
+for j in range (1,10):
+    for i in range(1,10):
+        print(qcf.emap[qcf.I(i,j)-1])
+    print('\n')
+
+
+H = qcf.genMatrix(sparseflag=UseSparseMatrices)
+N = len(qcf.Q[0])
+sH = np.zeros((N,N))
+H_sym=[]
+for I in range(0,N):
+    for J in range(0,N):
+            for i in qcf.sym_ind:
+                for j in qcf.sym_ind:  
+                    sH[I,J] = sH[I,J]+H[qcf.Q[i][I],qcf.Q[j][J]] / qcf.deltaQRTR(i,I,j,J)
+                    if i == qcf.sym_ind[-1] and j == qcf.sym_ind[-1]:
+                        if (qcf.Q[i][I] not in qcf.M_sym) and (qcf.Q[j][J] not in qcf.M_sym): 
+                            H_sym.append(sH[I,J])
+                        #else: H_sym.append(0)
+
+shape = ( np.sqrt(len(H_sym)), np.sqrt(len(H_sym)) ) 
+H=np.reshape( H_sym, shape)
+
+
+# if UseSparseMatrices == True:
+#     no_points = len(qcf.xmap)
+#     k = 5#int(3*no_points/8)
+#     w, v = sparse.linalg.eigsh(H, k, which = 'SM')
+
+if UseSparseMatrices == False:
+    w, v = linalg.eigh(H)
+
+    n=len(w)
+    nt = np.linspace(1,n,n)
+    E = sorted(w/2)
+    #qcf.plotEnergies(nt, E)
+    polyN = np.poly1d(np.polyfit(E, nt, 5))
+    #qcf.plotN(E, polyN,nt)
+    
+    
+    # Limit plot to linear + interesting region
+#    sym_type='oo'
+#    n = len(w)
+#    top = int(3*n/8)
+#    bottom = int(n/4)
+#    print('Total number of points in stadium: {}'.format(n))
+#    print('Points taken in the range {} : {}'.format(bottom, top))
+#    nt = np.linspace(bottom,top,top-bottom+1)
+#    # redE = E[bottom:(top+1)]
+    # redPolyN = np.poly1d(np.polyfit(redE, nt, 6))
+    # qcf.plotN(redE, redPolyN,nt)
+    # qcf.plotPolyN(nt, redPolyN, redE)
+    #qcf.plotDelta(nt, redPolyN, redE, sym_type)
+    
+    # # Delta-3 Statistic
+    # delta3 = qcf.delta3(redE, nt, redPolyN)
+    # qcf.plotDelta3(delta3)
+    # comp_time = (time.clock()-t0)/60.0
+    # print("TIME TO COMPUTE: %f mins" %comp_time)
+    
+
+
+
+X, Y = np.meshgrid(qcf.xt, qcf.yt)
+for m in range(0,1):    
+    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+    #print(v[:,state_ind])
+    z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
+    #print(z)
+    print('Energy: %s' %w[state_ind])
+    qcf.plotContour(X,Y,z,m)
+
+
+# return redPolyN, redE
