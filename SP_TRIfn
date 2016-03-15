@@ -60,7 +60,8 @@ class QC:
         # check it works right for diags
         DQ1 = (1+self.delta(self.Q[i][I],self.M_centre))*(1+self.delta(self.Q[j][J],self.M_centre))*(1+self.delta(self.Q[i][I],self.M))*(1+self.delta(self.Q[j][J],self.M))
         DQ2 = (1+self.delta(self.Q[i][I],self.M_centre))*(1+self.delta(self.Q[j][J],self.M_centre))*(1+self.delta(self.Q[i][I],self.Mdiag))*(1+self.delta(self.Q[j][J],self.Mdiag))
-        return np.sqrt(DQ1*DQ2)
+        return np.power(DQ1*DQ2,1/2)
+        
         
     def inside(self, i, j):
         x = j-1
@@ -166,23 +167,24 @@ class QC:
         return adjbool
 
     def arrayFromZ(self, v, xt, yt):
-        z= np.zeros( (self.r, self.c) )
-        for i in range(0,self.r):
-            for j in range(0,self.c):
-               z[i][j] = v[self.Q[0]
+        z= np.zeros( (self.r+2, self.c+2) )
+        for q in range(0,8):
+            for i in self.M_sym:
+                if i in self.Q[q]: self.Q[q].remove(i)
+            for k in range(0,len(v)):
+                    z[self.ymap[self.Q[q][k]]][self.xmap[self.Q[q][k]]] += v[k]
+        # need to divide overlap of even sym by sqrt(2)
+        #print z
+        #print self.Q
+        #print self.M_sym
+        #print len(self.xmap)
 
-
-        zero = np.zeros(((self.r+2), (self.c+2)))
-        for i in range(0,self.r):
-            for j in range(0,self.c): 
-                np.put(zero[i+1], [j+1], z[i][j])
-        z = zero*zero
+        z = z*z
         Ix=[]
         for i in range(0,self.r+2):
             Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
         I = scipy.integrate.simps(Ix, x=yt)
-        z=z/I
-        return z
+        return z/I
     
     def delta3(self, redE, nt, redPolyN):
         a,b = np.polyfit(redE, nt, 1)
@@ -200,6 +202,12 @@ class QC:
             Delta3[j] = Delta3[j] / (len(varDelta3))
         return Delta3 
             
+    def Propagate(self, wvfn, H, dt):
+        wvfn2=wvfn
+        for I in range(0,len(wvfn)):
+            for J in range(0,len(wvfn)):
+                wvfn2[I] += -j*H[I][J]*wvfn[J]*dt
+        return wvfn2
     ################################# PLOTTING #################################
        
     def plotMap(self):
@@ -323,6 +331,9 @@ class QC:
         fig = plt.figure(figsize=(15,15))
         
         # overlay the well - bit fucked, especially for smaller numbers of points
+        for i in range(0,self.r):
+            for j in range(0,self.r):
+                if np.isnan(self.Umap[i][j]): z[i+1][j+1] = np.nan
         #z[ z==0 ] = np.nan              # convert zeros to Nan for masking TOO BIG
         #z = self.masking(z)             # mask internal zeros only TOO SMALL
         # should probably create a subplot using internal zeros of z with twice as many points
