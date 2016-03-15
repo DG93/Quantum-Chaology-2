@@ -12,9 +12,9 @@ from scipy import sparse
 import SPfn as SPfn
 
 # c and r must be 3^m
-m = 4
+m = 3
 a=0.1
-no_iterations = 2                # from 0->4
+no_iterations = 1               # from 0->4
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
 qcf = SPfn.QC(m,a,no_iterations)      # create object
@@ -23,7 +23,7 @@ qcf.plotMap()
 qcf.FillM()                         # generates lists of indices of borders
 qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
 qcf.CreateQs()
-print(qcf.Q)
+#print(qcf.Q)
 #print(qcf.Umap)
 
 
@@ -38,16 +38,18 @@ for I in range(0,N):
                 for j in qcf.sym_ind:  
                     sH[I,J] = sH[I,J]+H[qcf.Q[i][I],qcf.Q[j][J]] / qcf.deltaQRTR(i,I,j,J)
                     if i == qcf.sym_ind[-1] and j == qcf.sym_ind[-1]:
-                        if (qcf.Q[i][I] not in qcf.M_sym) and (qcf.Q[j][J] not in qcf.M_sym): H_sym.append(sH[I,J])
+                        if (qcf.Q[i][I] not in qcf.M_sym) and (qcf.Q[j][J] not in qcf.M_sym): 
+                            H_sym.append(sH[I,J])
+                        #else: H_sym.append(0)
 
 shape = ( np.sqrt(len(H_sym)), np.sqrt(len(H_sym)) ) 
 H=np.reshape( H_sym, shape)
 
 
-if UseSparseMatrices == True:
-    no_points = len(qcf.xmap)
-    k = 5#int(3*no_points/8)
-    w, v = sparse.linalg.eigsh(H, k, which = 'SM')
+# if UseSparseMatrices == True:
+#     no_points = len(qcf.xmap)
+#     k = 5#int(3*no_points/8)
+#     w, v = sparse.linalg.eigsh(H, k, which = 'SM')
 
 if UseSparseMatrices == False:
     w, v = linalg.eigh(H)
@@ -68,11 +70,11 @@ if UseSparseMatrices == False:
     print('Total number of points in stadium: {}'.format(n))
     print('Points taken in the range {} : {}'.format(bottom, top))
     nt = np.linspace(bottom,top,top-bottom+1)
-    redE = E[bottom:(top+1)]
-    redPolyN = np.poly1d(np.polyfit(redE, nt, 6))
-    qcf.plotN(redE, redPolyN,nt)
-    qcf.plotPolyN(nt, redPolyN, redE)
-    qcf.plotDelta(nt, redPolyN, redE, sym_type)
+    # redE = E[bottom:(top+1)]
+    # redPolyN = np.poly1d(np.polyfit(redE, nt, 6))
+    # qcf.plotN(redE, redPolyN,nt)
+    # qcf.plotPolyN(nt, redPolyN, redE)
+    #qcf.plotDelta(nt, redPolyN, redE, sym_type)
     
     # # Delta-3 Statistic
     # delta3 = qcf.delta3(redE, nt, redPolyN)
@@ -83,16 +85,17 @@ if UseSparseMatrices == False:
 
 
 
-# X, Y = np.meshgrid(qcf.xt, qcf.yt)
-# for m in range(0,1):    
-#     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]#[len(s)+counter][0]
-#     print('HERES V LIKE')
-#     print(v[:,state_ind])
-#     z = qcf.QRTRarrayFromZ(v[:,state_ind], qcf.xt, qcf.yt, sym_type)
-#     print(z)
-#     print('Energy: %s' %w[state_ind])
-#     #qcf.plot2Dpsi(X,Y,z,m)
-#     qcf.plotContour(X,Y,z,m)
+X, Y = np.meshgrid(qcf.xt, qcf.yt)
+for m in range(40,44):    
+    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]#[len(s)+counter][0]
+    print('HERES V LIKE')
+    #print(v[:,state_ind])
+    wvfn = qcf.Propagate(v[:,state_ind], H, dt=1)
+    z = qcf.arrayFromZ(wvfn, qcf.xt, qcf.yt)
+    #print(z)
+    print('Energy: %s' %w[state_ind])
+    #qcf.plot2Dpsi(X,Y,z,m)
+    qcf.plotContour(X,Y,z,m)
 
 
-#return redPolyN, redE
+# return redPolyN, redE
