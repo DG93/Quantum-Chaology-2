@@ -60,7 +60,7 @@ class QC:
         
     def createEmap(self):
         for i in range(0,len(self.exmap)):
-            emap_t=[]
+            emap_t=[0]
             a=self.exmap[i]
             b=self.eymap[i]
             #print(a,b)
@@ -95,22 +95,26 @@ class QC:
                     if self.Umap[i-1][j]!=0: 
                         self.emap[self.I(n-1,m)-1].append(20)
                         if i+2<self.r: self.emap[self.I(n-1,m)-1].append(60)
-                        if self.Umap[i-2][j]!=0 and i-2>=0: self.emap[self.I(n-2,m)-1].append(60)
+                        if i-2>=0:
+                            if self.Umap[i-2][j]!=0: self.emap[self.I(n-2,m)-1].append(60)
                         
                     if self.Umap[i+1][j]!=0: 
                         self.emap[self.I(n+1,m)-1].append(30)
                         if i-2>=0: self.emap[self.I(n+1,m)-1].append(70)
-                        if self.Umap[i+2][j]!=0 and i+2<self.r: self.emap[self.I(n+2,m)-1].append(70)
+                        if i+2<self.r:
+                            if self.Umap[i+2][j]!=0: self.emap[self.I(n+2,m)-1].append(70)
                         
                     if self.Umap[i][j-1]!=0: 
                         self.emap[self.I(n,m-1)-1].append(10)
                         if j+2<self.r: self.emap[self.I(n,m-1)-1].append(50)
-                        if self.Umap[i][j-2]!=0 and j-2>=0: self.emap[self.I(n,m-2)-1].append(50)
+                        if j-2>=0: 
+                            if self.Umap[i][j-2]!=0: self.emap[self.I(n,m-2)-1].append(50)
                         
                     if self.Umap[i][j+1]!=0: 
                         self.emap[self.I(n,m+1)-1].append(40)
                         if j-2>=0: self.emap[self.I(n,m+1)-1].append(80)
-                        if self.Umap[i][j+2]!=0 and j+2<self.r: self.emap[self.I(n,m+2)-1].append(80)
+                        if j+2<self.r: 
+                            if self.Umap[i][j+2]!=0: self.emap[self.I(n,m+2)-1].append(80)
                         
                     
     
@@ -228,6 +232,13 @@ class QC:
                 if self.emap[k][n]==8:
                     #print(i,j,I(i,j+c-2,c)-1,k)
                     M[self.I(i,j+self.c-2)-1,k]+=Im2 
+        
+        for k in range(0,len(self.Umap)):
+            for n in range(0,len(self.Umap)):
+                if self.Umap[k][n]==0:
+                    for m in range(0,len(self.xmap)):
+                        M[self.I(k+1,n+1)-1,m]=0
+                        M[m,self.I(k+1,n+1)-1]=0
         N = M.tolist()        
         N = sparse.csr_matrix(N)
         return M,N
