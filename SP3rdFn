@@ -59,6 +59,7 @@ class QC:
         return i,j
         
     def createEmap(self):
+        # Images from external boundaries
         for i in range(0,len(self.exmap)):
             emap_t=[0]
             a=self.exmap[i]
@@ -83,14 +84,12 @@ class QC:
                 if a==2 and self.Umap[1][b-1]!=0: emap_t.append(8)
             else: emap_t.append(0)
             self.emap.append(emap_t)
-            
+        # Images from internal boundaries   
         for j in range(0,self.r):
             for i in range(0,self.c):
                 k=self.Umap[i][j] # 1,0 here not 1,NaN 
                 n=i+1
                 m=j+1
-                #I=self.I(n,m)-1
-                #print(n,m,I)
                 if k==0: # If in boundary
                     if self.Umap[i-1][j]!=0: 
                         self.emap[self.I(n-1,m)-1].append(20)
@@ -232,7 +231,8 @@ class QC:
                 if self.emap[k][n]==8:
                     #print(i,j,I(i,j+c-2,c)-1,k)
                     M[self.I(i,j+self.c-2)-1,k]+=Im2 
-        
+            
+        # Set points in boundaries to zero
         for k in range(0,len(self.Umap)):
             for n in range(0,len(self.Umap)):
                 if self.Umap[k][n]==0:
