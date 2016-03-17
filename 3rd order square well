@@ -13,13 +13,12 @@ import time
 
 t0 = time.clock()
 Sparseflag = False
-m = 2
-c = 31#3**m #int(input("Enter number of points in x axis: "))
+c = 3#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
-x=a*c #float(input("Enter width (x axis) of well: "))
-y=b*r #float(input("Enter depth (y axis) of well: "))
+x=a*(c-1) #float(input("Enter width (x axis) of well: "))
+y=b*(r-1) #float(input("Enter depth (y axis) of well: "))
 xt = np.linspace(0,x,c+2)
 yt = np.linspace(0,y,r+2)
 X, Y = np.meshgrid(xt, yt)
@@ -36,7 +35,7 @@ qcf.plotMap(xmap,ymap)
 emap3 = qcf.createEmap3(xmap,ymap,r,c)
 #print(emap3)
 W3,Ws3=qcf.genMatrix3(xmap,ymap,emap3,c,r,Sparseflag)
-#print(W3)
+print(W3)
 #print(Ws3)
 w3,v3 = linalg.eigh(W3)
 
@@ -71,7 +70,7 @@ for m in range(0,n_range):
     z3 = qcf.arrayFromZ(v3[:,state_ind3], c, r, xt, yt)
     e3 = ((w3[state_ind3])/360)
     E3.append(e3)
-    #qcf.plotContour(X,Y,z3,m,2)
+    qcf.plotContour(X,Y,z3,m,3)
     # 2nd order
     state_ind2 = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
     z2 = qcf.arrayFromZ(v2[:,state_ind2], c, r, xt, yt)
@@ -91,10 +90,10 @@ for nx in range(1,n_range+1): # range must be large to allow sorting
         ea = ((np.pi**2)/2)*((((nx)**2)/r**2)+(((ny)**2)/c**2))
         Ea.append(ea)
 Ea=sorted(Ea)
-print(Ea[0],E1[0],E2[0],E3[0]) 
+#print(Ea[0],E1[0],E2[0],E3[0]) 
 n=n_range
 nt = np.linspace(0,n-1,n)
-qcf.plotEnergies(n_range, nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
-qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
+#qcf.plotEnergies(n_range, nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
+#qcf.plotEnergyDiff(nt, Ea[0:n], E1[0:n], E2[0:n], E3[0:n])
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
