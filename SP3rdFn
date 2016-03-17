@@ -61,9 +61,9 @@ class QC:
     def createEmap(self):
         for i in range(0,len(self.exmap)):
             emap_t=[]
-            a=self.eymap[i]
-            b=self.exmap[i]
-#            print(a,b)
+            a=self.exmap[i]
+            b=self.eymap[i]
+            #print(a,b)
             if a==self.c or b==self.r or b==1 or a==1 or a==self.c-1 or b==self.r-1 or b==2 or a==2:
                 if a==self.c: 
                     emap_t.append(1)
@@ -77,10 +77,10 @@ class QC:
                 if a==1: 
                     emap_t.append(4)
                     emap_t.append(8)
-                if a==self.c-1: emap_t.append(5)
-                if b==self.r-1: emap_t.append(6)
-                if b==2: emap_t.append(7)
-                if a==2: emap_t.append(8)
+                if a==self.c-1 and self.Umap[self.c-2][b-1]!=0: emap_t.append(5)
+                if b==self.r-1 and self.Umap[a-1][self.r-2]!=0: emap_t.append(6)
+                if b==2 and self.Umap[a-1][1]!=0: emap_t.append(7)
+                if a==2 and self.Umap[1][b-1]!=0: emap_t.append(8)
             else: emap_t.append(0)
             self.emap.append(emap_t)
             
@@ -93,24 +93,24 @@ class QC:
                 #print(n,m,I)
                 if k==0: # If in boundary
                     if self.Umap[i-1][j]!=0: 
-                        self.emap[self.I(n-1,m)-1].append(10)
-                        if i+2<self.r: self.emap[self.I(n-1,m)-1].append(50)
-                        if self.Umap[i-2][j]!=0 and i-2>=0: self.emap[self.I(n-2,m)-1].append(50)
+                        self.emap[self.I(n-1,m)-1].append(20)
+                        if i+2<self.r: self.emap[self.I(n-1,m)-1].append(60)
+                        if self.Umap[i-2][j]!=0 and i-2>=0: self.emap[self.I(n-2,m)-1].append(60)
                         
                     if self.Umap[i+1][j]!=0: 
-                        self.emap[self.I(n+1,m)-1].append(40)
-                        if i-2>=0: self.emap[self.I(n+1,m)-1].append(80)
-                        if self.Umap[i+2][j]!=0 and i+2<self.r: self.emap[self.I(n+2,m)-1].append(80)
+                        self.emap[self.I(n+1,m)-1].append(30)
+                        if i-2>=0: self.emap[self.I(n+1,m)-1].append(70)
+                        if self.Umap[i+2][j]!=0 and i+2<self.r: self.emap[self.I(n+2,m)-1].append(70)
                         
                     if self.Umap[i][j-1]!=0: 
-                        self.emap[self.I(n,m-1)-1].append(20)
-                        if j+2<self.r: self.emap[self.I(n,m-1)-1].append(60)
-                        if self.Umap[i][j-2]!=0 and j-2>=0: self.emap[self.I(n,m-2)-1].append(60)
+                        self.emap[self.I(n,m-1)-1].append(10)
+                        if j+2<self.r: self.emap[self.I(n,m-1)-1].append(50)
+                        if self.Umap[i][j-2]!=0 and j-2>=0: self.emap[self.I(n,m-2)-1].append(50)
                         
                     if self.Umap[i][j+1]!=0: 
-                        self.emap[self.I(n,m+1)-1].append(30)
-                        if j-2>=0: self.emap[self.I(n,m+1)-1].append(70)
-                        if self.Umap[i][j+2]!=0 and j+2<self.r: self.emap[self.I(n,m+2)-1].append(70)
+                        self.emap[self.I(n,m+1)-1].append(40)
+                        if j-2>=0: self.emap[self.I(n,m+1)-1].append(80)
+                        if self.Umap[i][j+2]!=0 and j+2<self.r: self.emap[self.I(n,m+2)-1].append(80)
                         
                     
     
