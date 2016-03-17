@@ -14,7 +14,7 @@ import time
 t0 = time.clock()
 Sparseflag = False
 m = 2
-c = 51#3**m #int(input("Enter number of points in x axis: "))
+c = 31#3**m #int(input("Enter number of points in x axis: "))
 r = c #int(input("Enter number points in y axis: "))
 a = 1 # spacing in x axis
 b=a # spacing in y axis
@@ -64,14 +64,14 @@ Ea=[]
 E1=[]
 E2=[]
 E3=[]
-n_range = 1000
+n_range = 1
 for m in range(0,n_range):
     #3rd order
     state_ind3 = sorted(enumerate(w3), key=lambda x: x[1])[m][0]
     z3 = qcf.arrayFromZ(v3[:,state_ind3], c, r, xt, yt)
     e3 = ((w3[state_ind3])/360)
     E3.append(e3)
-    #qcf.plotContour(X,Y,z2,m,2)
+    #qcf.plotContour(X,Y,z3,m,2)
     # 2nd order
     state_ind2 = sorted(enumerate(w2), key=lambda x: x[1])[m][0]
     z2 = qcf.arrayFromZ(v2[:,state_ind2], c, r, xt, yt)
