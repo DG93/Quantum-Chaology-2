@@ -48,10 +48,18 @@ def createEmap3(xmap,ymap,r,c):
         a=xmap[i]
         b=ymap[i]
         if a==c or b==r or b==1 or a==1 or a==c-1 or b==r-1 or b==2 or a==2:
-            if a==c: emap_t.append(1)
-            if b==r: emap_t.append(2)
-            if b==1: emap_t.append(3)
-            if a==1: emap_t.append(4)
+            if a==c: 
+                emap_t.append(1)
+                emap_t.append(5)
+            if b==r: 
+                emap_t.append(2)
+                emap_t.append(6)
+            if b==1: 
+                emap_t.append(3)
+                emap_t.append(7)
+            if a==1: 
+                emap_t.append(4)
+                emap_t.append(8)
             if a==c-1: emap_t.append(5)
             if b==r-1: emap_t.append(6)
             if b==2: emap_t.append(7)
@@ -288,19 +296,19 @@ def genMatrix3(i,j,emap,c,r,sparseflag):
                 #print(i,j,I(i,j+c-1,c)-1,k)
                 M[I(i,j+c-1,c)-1,k]+=Im
                 
-            if emap[k][n]==1 or emap[k][n]==5:
+            if emap[k][n]==5:
                 #print(i,j,I(i,j-c+2,c)-1,k)
                 M[I(i,j-c+2,c)-1,k]+=Im2
 
-            if emap[k][n]==2 or emap[k][n]==6:
+            if emap[k][n]==6:
                 #print(i,j,I(i-r+2,j,c)-1,k)
                 M[I(i-r+2,j,c)-1,k]+=Im2
 
-            if emap[k][n]==3 or emap[k][n]==7:
+            if emap[k][n]==7:
                 #print(i,j,I(i+r-2,j,c)-1,k)
                 M[I(i+r-2,j,c)-1,k]+=Im2
 
-            if emap[k][n]==4 or emap[k][n]==8:
+            if emap[k][n]==8:
                 #print(i,j,I(i,j+c-2,c)-1,k)
                 M[I(i,j+c-2,c)-1,k]+=Im2 
     N = M.tolist()        
