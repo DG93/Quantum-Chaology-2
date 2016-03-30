@@ -12,7 +12,7 @@ from scipy import sparse
 import SP3rdFn as SPfn
 
 # c and r must be 3^m
-m = 2
+m = 1
 a = 1
 no_iterations = 1                 # from 0->4
 UseSparseMatrices = False
@@ -21,19 +21,21 @@ qcf.CreateMap()                         # find which points lie inside
 qcf.plotMap()
 qcf.createEmap()
 
-for j in range (1,qcf.r+1):
-    for i in range(1,qcf.c+1):
-        print(qcf.emap[qcf.I(i,j)-1])
-    print('\n')
+#for j in range (1,qcf.r+1):
+#    for i in range(1,qcf.c+1):
+#        print(qcf.emap[qcf.I(i,j)-1])
+#    print('\n')
 
 H,Hs = qcf.genMatrix3(False)
-#print(H)
+print(H)
 
 if UseSparseMatrices == True:
     k = 10
     w, v = sparse.linalg.eigsh(H, k,which='SM')
 if UseSparseMatrices == False:
     w, v = linalg.eigh(H)
+    print(w)
+    print(v)
 
 # enumerate list and sort by eigenvalues, return index of relevant energy level; m labels mth energy level (in sorted list of energies)
 
@@ -48,7 +50,7 @@ for m in range(0,1):
 
 # n=len(w)
 # nt = np.linspace(1,n,n)
-# E = sorted(w/2)
+# E = sorted(w/360)
 # qcf.plotEnergies(nt, E)
 # polyN = np.poly1d(np.polyfit(E, nt, 5))
 # qcf.plotN(E, polyN,nt)
