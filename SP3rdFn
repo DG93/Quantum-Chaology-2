@@ -194,6 +194,24 @@ class QC:
             M.append(R)
         M = np.array(M)
         
+        # Set points in/thru boundaries to zero
+        for k in range(0,len(self.Umap)):
+            for n in range(0,len(self.Umap)):
+                if self.Umap[k][n]==0:
+                    for m in range(0,len(self.xmap)):
+                        M[self.I(k+1,n+1)-1,m]=0
+                        M[m,self.I(k+1,n+1)-1]=0
+                    L=0
+                    while n+1-L>0:
+                        M[self.I(k+1,n+2)-1,self.I(k+1,n+1-L)-1]=0
+                        M[self.I(k+1,n+1-L)-1,self.I(k+1,n+2)-1]=0
+                        L=L+1
+                    L=0
+                    while k+1-L>0:
+                        M[self.I(k+2,n+1)-1,self.I(k+1-L,n+1)-1]=0
+                        M[self.I(k+1-L,n+1)-1,self.I(k+2,n+1)-1]=0
+                        L=L+1
+                        
         # Add images
         Im=-C
         Im2=-D
@@ -231,14 +249,87 @@ class QC:
                 if self.emap[k][n]==8:
                     #print(i,j,I(i,j+c-2,c)-1,k)
                     M[self.I(i,j+self.c-2)-1,k]+=Im2 
-            
-        # Set points in boundaries to zero
+                    
+                if self.emap[k][n]==10:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i-1][j]!=0:
+                            M[self.I(i,j+1)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j+1
+                        
+                if self.emap[k][n]==20:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i][j-1]!=0:
+                            M[self.I(i+1,j)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i+1
+                        
+                if self.emap[k][n]==30:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i-2][j-1]!=0:
+                            M[self.I(i-1,j)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i-1
+                        
+                if self.emap[k][n]==40:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i-1][j-2]!=0:
+                            M[self.I(i,j-1)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j-1
+                        
+                if self.emap[k][n]==50:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i-1][j+1]!=0:
+                            M[self.I(i,j+2)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j+1
+                 
+                if self.emap[k][n]==60:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i+1][j-1]!=0:
+                            M[self.I(i+2,j)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i+1
+                 
+                if self.emap[k][n]==70:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i-3][j-1]!=0:
+                            M[self.I(i-2,j)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i-1
+                 
+                if self.emap[k][n]==80:
+                    Flag=False
+                    while Flag==False:
+                        if self.Umap[i-1][j-3]!=0:
+                            M[self.I(i,j-2)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j-1
+                 
+        # Set points in boundaries to zero (again)
         for k in range(0,len(self.Umap)):
             for n in range(0,len(self.Umap)):
                 if self.Umap[k][n]==0:
                     for m in range(0,len(self.xmap)):
                         M[self.I(k+1,n+1)-1,m]=0
                         M[m,self.I(k+1,n+1)-1]=0
+    
         N = M.tolist()        
         N = sparse.csr_matrix(N)
         return M,N
