@@ -61,7 +61,7 @@ class QC:
     def createEmap(self):
         # Images from external boundaries
         for i in range(0,len(self.exmap)):
-            emap_t=[0]
+            emap_t=[]
             a=self.exmap[i]
             b=self.eymap[i]
             #print(a,b)
@@ -322,14 +322,18 @@ class QC:
                             i,j=self.ij(k+1)
                         else: j=j-1
                  
-        # Set points in boundaries to zero (again)
+        # Delete points in boundaries
+        d=[]
         for k in range(0,len(self.Umap)):
             for n in range(0,len(self.Umap)):
                 if self.Umap[k][n]==0:
-                    for m in range(0,len(self.xmap)):
-                        M[self.I(k+1,n+1)-1,m]=0
-                        M[m,self.I(k+1,n+1)-1]=0
+                    d.append(self.I(k+1,n+1)-1)
+        d.sort(reverse=True)
+        for i in range(0,len(d)):
+            M=np.delete(M,d[i],axis=0)
+            M=np.delete(M,d[i],axis=1)
     
+        # Create sparse matrix
         N = M.tolist()        
         N = sparse.csr_matrix(N)
         return M,N
@@ -375,7 +379,6 @@ class QC:
                     Umap_t.append(1)
                 else: Umap_t.append(0)
             self.Umap.append(Umap_t)        
-        print(self.Umap)
     
     def NumberPointsInQRTR(self):
         self.n=0
