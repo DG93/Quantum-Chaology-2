@@ -60,8 +60,7 @@ class QC:
         # check it works right for diags
         DQ1 = (1+self.delta(self.Q[i][I],self.M_centre))*(1+self.delta(self.Q[j][J],self.M_centre))*(1+self.delta(self.Q[i][I],self.M))*(1+self.delta(self.Q[j][J],self.M))
         DQ2 = (1+self.delta(self.Q[i][I],self.M_centre))*(1+self.delta(self.Q[j][J],self.M_centre))*(1+self.delta(self.Q[i][I],self.Mdiag))*(1+self.delta(self.Q[j][J],self.Mdiag))
-        return np.power(DQ1*DQ2,1/2)
-        
+        return np.sqrt(DQ1*DQ2)
         
     def inside(self, i, j):
         x = j-1
@@ -166,6 +165,23 @@ class QC:
         if (abs(self.ymap[J]-self.ymap[I])==1) and (self.xmap[J]== self.xmap[I]): adjbool = 1-adjbool
         return adjbool
 
+#    def arrayFromZ(self, v, xt, yt):
+#        z= np.zeros( (self.r, self.c) )
+#        for i in range(0,self.r):
+#            for j in range(0,self.c):
+#               z[i][j] = v[self.Q[0]]
+#        zero = np.zeros((self.r+2), (self.c+2))
+#        for i in range(0,self.r):
+#            for j in range(0,self.c): 
+#                np.put(zero[i+1], [j+1], z[i][j])
+#        z = zero*zero
+#        Ix=[]
+#        for i in range(0,self.r+2):
+#            Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
+#        I = scipy.integrate.simps(Ix, x=yt)
+#        z=z/I
+#        return z
+
     def arrayFromZ(self, v, xt, yt):
         z= np.zeros( (self.r+2, self.c+2) )
         for q in range(0,8):
@@ -202,12 +218,6 @@ class QC:
             Delta3[j] = Delta3[j] / (len(varDelta3))
         return Delta3 
             
-    def Propagate(self, wvfn, H, dt):
-        wvfn2=wvfn
-        for I in range(0,len(wvfn)):
-            for J in range(0,len(wvfn)):
-                wvfn2[I] += -j*H[I][J]*wvfn[J]*dt
-        return wvfn2
     ################################# PLOTTING #################################
        
     def plotMap(self):
