@@ -11,8 +11,8 @@ from numpy import linalg
 import SP_TRIfn_3rd as SPfn
 
 # c and r must be 3^m
-m = 2
-a=0.1
+m = 3
+a = 1
 no_iterations = 1               # from 0->4
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
@@ -26,13 +26,13 @@ qcf.CreateQs()
 #print(qcf.Q)
 #print(qcf.Umap)
 #print(qcf.emap)
-for j in range (1,10):
-    for i in range(1,10):
-        print(qcf.emap[qcf.I(i,j)-1])
-    print('\n')
+#for j in range (1,10):
+#    for i in range(1,10):
+#        print(qcf.emap[qcf.I(i,j)-1])
+#    print('\n')
 
 
-H = qcf.genMatrix(sparseflag=UseSparseMatrices)
+H,Hs = qcf.genMatrix3(False)
 N = len(qcf.Q[0])
 sH = np.zeros((N,N))
 H_sym=[]
@@ -58,11 +58,11 @@ H=np.reshape( H_sym, shape)
 if UseSparseMatrices == False:
     w, v = linalg.eigh(H)
 
-    n=len(w)
-    nt = np.linspace(1,n,n)
-    E = sorted(w/2)
-    #qcf.plotEnergies(nt, E)
-    polyN = np.poly1d(np.polyfit(E, nt, 5))
+#    n=len(w)
+#    nt = np.linspace(1,n,n)
+#    E = sorted(w/2)
+#    #qcf.plotEnergies(nt, E)
+#    polyN = np.poly1d(np.polyfit(E, nt, 5))
     #qcf.plotN(E, polyN,nt)
     
     
