@@ -8,6 +8,7 @@ Created on Wed Sep 30 17:35:32 2015
 import numpy as np
 np.set_printoptions(threshold=np.nan)
 from numpy import linalg
+from scipy import sparse
 import SP_TRIfn_3rd as SPfn
 
 # c and r must be 3^m
@@ -32,7 +33,7 @@ qcf.CreateQs()
 #    print('\n')
 
 
-H,Hs = qcf.genMatrix3(False)
+H,Hs = qcf.genMatrix3(UseSparseMatrices)
 N = len(qcf.Q[0])
 sH = np.zeros((N,N))
 H_sym=[]
@@ -50,10 +51,10 @@ shape = ( np.sqrt(len(H_sym)), np.sqrt(len(H_sym)) )
 H=np.reshape( H_sym, shape)
 
 
-# if UseSparseMatrices == True:
-#     no_points = len(qcf.xmap)
-#     k = 5#int(3*no_points/8)
-#     w, v = sparse.linalg.eigsh(H, k, which = 'SM')
+if UseSparseMatrices == True:
+     no_points = len(qcf.xmap)
+     k = qcf.c#5#int(3*no_points/8)
+     w, v = sparse.linalg.eigsh(Hs, k, which = 'SM')
 
 if UseSparseMatrices == False:
     w, v = linalg.eigh(H)
@@ -95,7 +96,7 @@ for m in range(0,1):
     #print(v[:,state_ind])
     z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
     #print(z)
-    print('Energy: %s' %w[state_ind])
+    print('Energy: %s' %(w[state_ind]/360))
     qcf.plotContour(X,Y,z,m)
 
 
