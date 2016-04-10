@@ -86,7 +86,7 @@ for m in range(0,1):
     #print(v[:,state_ind])
     z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
     #print(z)
-    print('Energy: %s' %w[state_ind])
+    print('Energy: %s' %(w[state_ind]/2))
     qcf.plotContour(X,Y,z,m)
 
 #return redPolyN, redE
