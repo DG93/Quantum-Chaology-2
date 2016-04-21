@@ -10,11 +10,15 @@ np.set_printoptions(threshold=np.nan)
 from numpy import linalg
 from scipy import sparse
 import SP_TRIfn_3rd as SPfn
+import time
+
+t0 = time.clock()
+Sparseflag = False
 
 # c and r must be 3^m
-m = 3
+m = 4
 a = 1
-no_iterations = 1               # from 0->4
+no_iterations = 3               # from 0->4
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
 qcf = SPfn.QC(m,a,no_iterations)      # create object
@@ -24,13 +28,6 @@ qcf.createEmap()
 qcf.FillM()                         # generates lists of indices of borders
 qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
 qcf.CreateQs()
-#print(qcf.Q)
-#print(qcf.Umap)
-#print(qcf.emap)
-#for j in range (1,10):
-#    for i in range(1,10):
-#        print(qcf.emap[qcf.I(i,j)-1])
-#    print('\n')
 
 
 H,Hs = qcf.genMatrix3(UseSparseMatrices)
@@ -52,52 +49,36 @@ H=np.reshape( H_sym, shape)
 
 
 if UseSparseMatrices == True:
-     no_points = len(qcf.xmap)
-     k = qcf.c#5#int(3*no_points/8)
+     k = qcf.c
      w, v = sparse.linalg.eigsh(Hs, k, which = 'SM')
 
 if UseSparseMatrices == False:
     w, v = linalg.eigh(H)
-
-#    n=len(w)
-#    nt = np.linspace(1,n,n)
-#    E = sorted(w/2)
-#    #qcf.plotEnergies(nt, E)
-#    polyN = np.poly1d(np.polyfit(E, nt, 5))
-    #qcf.plotN(E, polyN,nt)
     
-    
-    # Limit plot to linear + interesting region
-#    sym_type='oo'
-#    n = len(w)
-#    top = int(3*n/8)
-#    bottom = int(n/4)
-#    print('Total number of points in stadium: {}'.format(n))
-#    print('Points taken in the range {} : {}'.format(bottom, top))
-#    nt = np.linspace(bottom,top,top-bottom+1)
-#    # redE = E[bottom:(top+1)]
-    # redPolyN = np.poly1d(np.polyfit(redE, nt, 6))
-    # qcf.plotN(redE, redPolyN,nt)
-    # qcf.plotPolyN(nt, redPolyN, redE)
-    #qcf.plotDelta(nt, redPolyN, redE, sym_type)
-    
-    # # Delta-3 Statistic
-    # delta3 = qcf.delta3(redE, nt, redPolyN)
-    # qcf.plotDelta3(delta3)
-    # comp_time = (time.clock()-t0)/60.0
-    # print("TIME TO COMPUTE: %f mins" %comp_time)
-    
-
-
-
+E=[]
+n = 2#qcf.c
 X, Y = np.meshgrid(qcf.xt, qcf.yt)
-for m in range(0,1):    
+for m in range(0,n):    
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-    #print(v[:,state_ind])
     z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
-    #print(z)
-    print('Energy: %s' %(w[state_ind]/360))
+    e=(w[state_ind]/360)
+    E.append(e)
     qcf.plotContour(X,Y,z,m)
+    qcf.plotDensity(X,Y,z,m)
+    
+#nt = np.linspace(0,n-1,n)
+#qcf.plotEnergies(n, nt, E)
+#
+#sym_type='oo'
+#polyN = np.poly1d(np.polyfit(E, nt, 6))
+#qcf.plotN(E, polyN, nt)
+#qcf.plotPolyN(nt, polyN, E)
+#qcf.plotDelta(nt, polyN, E, sym_type)
+#    
+## Delta-3 Statistic
+#delta3 = qcf.delta3(E, nt, polyN)
+#qcf.plotDelta3(delta3)
 
-
-# return redPolyN, redE
+comp_time = (time.clock()-t0)/60.0
+print("Time taken: %f mins" %comp_time)
+    
