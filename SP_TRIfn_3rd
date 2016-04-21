@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib.colors import LogNorm
 import scipy.integrate
 from scipy import sparse
 from scipy.optimize import curve_fit
@@ -526,15 +527,17 @@ class QC:
         plt.show()
         fig.savefig('Billiard_%i.png' %m)
         
-    def plotEnergies(self,nt, E):
+    def plotEnergies(self, s, nt, E):
         fig = plt.figure(figsize=(15,10))
-        plt.plot(nt, E, label='Numeric')
-        plt.title('Energy vs n', fontsize=self.plottextsize+2)
-        plt.xlabel('$n$',fontsize=self.plottextsize+2)
-        plt.ylabel('$Energy$',fontsize=self.plottextsize+2)
-        plt.legend()
+        plt.plot(nt, E, label='Energy')
+        plt.title('Energy vs n', fontsize=30)
+        plt.xlabel('$n$',fontsize=40)
+        plt.tick_params(axis='x', labelsize=20)
+        plt.ylabel('$Energy$',fontsize=40)
+        plt.tick_params(axis='y', labelsize=20)
+        plt.legend(prop={'size':20},loc=2)
         plt.show()
-        fig.savefig('2D_E_vs_n.png')  
+        fig.savefig('SP3TRI_E_vs_n_%i.png' %s) 
         
     def plotN(self, E,polyN, nt):
         fig = plt.figure(figsize=(15,10))
@@ -550,7 +553,7 @@ class QC:
     def plotPolyN(self, nt, polyN, E):
         fig = plt.figure(figsize=(15,10))
         plt.plot(nt, polyN(E), label='Polynomial fit')
-        plt.plot(nt,nt, label='Perfect fit')
+        plt.plot(nt, nt, label='Perfect fit')
         plt.title('n vs Polynomial fit in n', fontsize=self.plottextsize+2)
         plt.xlabel('n',fontsize=self.plottextsize+2)
         plt.ylabel('Polynomial fit in n',fontsize=self.plottextsize+2)
@@ -591,7 +594,7 @@ class QC:
             dn.append(PolyN(E[i+1])-PolyN(E[i]))
         D = np.mean(dn)
         print('Average nearest neighbour spacing, D: %f' %D)
-        
+        # Analytic functions
         Ps = (1/D)*np.exp(-x/D)
         plt.plot(x, Ps, label='Poisson')
         Pw = ((np.pi*x)/(2*D**2))*np.exp((-np.pi*x**2)/(4*D**2))
@@ -617,12 +620,10 @@ class QC:
                 if z[i][j]==0:
                     if z[i+1][j]==0 and z[i-1][j]==0 and z[i][j-1]==0 and z[i][j+1]==0:
                         z[i][j] = np.nan
-            
         return z   
         
-    def plotContour(self,X,Y,z, m):
+    def plotContour(self,X,Y,z,m):
         fig = plt.figure(figsize=(15,15))
-        
         # overlay the well - bit fucked, especially for smaller numbers of points
         for i in range(0,self.r):
             for j in range(0,self.r):
@@ -631,8 +632,6 @@ class QC:
         #z = self.masking(z)             # mask internal zeros only TOO SMALL
         # should probably create a subplot using internal zeros of z with twice as many points
         # either that or just write a function that defines centres and sizes of all squares; cba
-        
-        
         no_bins = 500
         lev = np.linspace(0,np.nanmax(z),no_bins)
         plt.gca().patch.set_color('1')
@@ -647,6 +646,17 @@ class QC:
         plt.show()
         fig.savefig('Contour_%i_%s_%s.png' %(m, self.r, self.iterations_label))
             
+    def plotDensity(self,X,Y,z,m):
+        fig = plt.figure(figsize=(15,15))
+        plt.imshow(z, extent=(np.amin(X), np.amax(X), np.amin(Y), np.amax(Y)),
+        cmap=cm.gist_rainbow)
+        plt.title('Density plot for %ith energy' %m, fontsize=self.plottextsize+10)
+        plt.xlabel('$x$',fontsize=self.plottextsize+12)
+        plt.ylabel('$y$',fontsize=self.plottextsize+12)
+        #plt.colorbar()
+        plt.show()
+        fig.savefig('Density_%i_%s_%s.png' %(m, self.r, self.iterations_label))
+        
     def plotDelta3(self, delta3):
         fig = plt.figure(figsize=(15,10))
         L = np.linspace(1, len(delta3), len(delta3))
