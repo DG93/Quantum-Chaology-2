@@ -30,7 +30,7 @@ qcf.Symmetry(sym_type)                      # Depending on symmetry, choose whic
 qcf.CreateQs()
 
 
-H,Hs = qcf.genMatrix3(UseSparseMatrices)
+H,Hs = qcf.genMatrix3()
 N = len(qcf.Q[0])
 sH = np.zeros((N,N))
 H_sym=[]
