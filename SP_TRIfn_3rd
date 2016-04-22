@@ -117,7 +117,7 @@ class QC:
                         
                     
     
-    def genMatrix3(self,sparseflag):
+    def genMatrix3(self):
         i=self.exmap
         j=self.eymap
         A=980.
@@ -337,6 +337,7 @@ class QC:
         N = M.tolist()        
         N = sparse.csr_matrix(N)
         return M,N
+        
                     
     def FillM(self):
         no_points=len(self.xmap)
