@@ -338,6 +338,7 @@ class QC:
         # Create sparse matrix
         N = M.tolist()        
         N = sparse.csr_matrix(N)
+        np.savetxt('final_matrix_%s' %sym_type, M)
         return M,N
         
                     
