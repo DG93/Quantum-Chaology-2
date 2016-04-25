@@ -193,6 +193,7 @@ class QC:
                         R[k] += 0
             M.append(R)
         np.savetxt('raw_matrix_%s' %sym_type, M)
+        #M = np.loadtxt('raw_matrix_%s' %sym_type)
         M = np.array(M, copy=False)
         
         # Set points in/thru boundaries to zero
