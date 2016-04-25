@@ -16,9 +16,9 @@ t0 = time.clock()
 Sparseflag = False
 
 # c and r must be 3^m
-m = 5
+m = 3
 a = 1
-no_iterations = 3               # from 0->4
+no_iterations = 2               # from 0->4
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
 qcf = SPfn.QC(m,a,no_iterations)      # create object
@@ -63,8 +63,9 @@ for m in range(0,n):
     z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
     e=(w[state_ind]/360)
     E.append(e)
-    qcf.plotContour(X,Y,z,m)
-    qcf.plotDensity(X,Y,z,m)
+    if m==0 or m==1:
+        qcf.plotContour(X,Y,z,m)
+        qcf.plotDensity(X,Y,z,m)
     
 nt = np.linspace(0,n-1,n)
 qcf.plotEnergies(n, nt, E)
