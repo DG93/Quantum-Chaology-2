@@ -117,7 +117,7 @@ class QC:
                         
                     
     
-    def genMatrix3(self):
+    def genMatrix3(self, sym_type):
         i=self.exmap
         j=self.eymap
         A=980.
@@ -192,6 +192,7 @@ class QC:
                     else:
                         R[k] += 0
             M.append(R)
+        np.savetxt('raw_matrix_%s' %sym_type, M)
         M = np.array(M, copy=False)
         
         # Set points in/thru boundaries to zero
