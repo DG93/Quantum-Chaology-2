@@ -16,7 +16,7 @@ t0 = time.clock()
 Sparseflag = False
 
 # c and r must be 3^m
-m = 4
+m = 5
 a = 1
 no_iterations = 3               # from 0->4
 UseSparseMatrices = False
@@ -30,7 +30,7 @@ qcf.Symmetry(sym_type)                      # Depending on symmetry, choose whic
 qcf.CreateQs()
 
 
-H,Hs = qcf.genMatrix3()
+H,Hs = qcf.genMatrix3(sym_type)
 N = len(qcf.Q[0])
 sH = np.zeros((N,N))
 H_sym=[]
@@ -56,7 +56,7 @@ if UseSparseMatrices == False:
     w, v = linalg.eigh(H)
     
 E=[]
-n = 2#qcf.c
+n = qcf.c
 X, Y = np.meshgrid(qcf.xt, qcf.yt)
 for m in range(0,n):    
     state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
@@ -66,19 +66,18 @@ for m in range(0,n):
     qcf.plotContour(X,Y,z,m)
     qcf.plotDensity(X,Y,z,m)
     
-#nt = np.linspace(0,n-1,n)
-#qcf.plotEnergies(n, nt, E)
-#
-#sym_type='oo'
-#polyN = np.poly1d(np.polyfit(E, nt, 6))
-#qcf.plotN(E, polyN, nt)
-#qcf.plotPolyN(nt, polyN, E)
-#qcf.plotDelta(nt, polyN, E, sym_type)
-#    
-## Delta-3 Statistic
-#delta3 = qcf.delta3(E, nt, polyN)
-#qcf.plotDelta3(delta3)
+nt = np.linspace(0,n-1,n)
+qcf.plotEnergies(n, nt, E)
+
+sym_type='oo'
+polyN = np.poly1d(np.polyfit(E, nt, 6))
+qcf.plotN(E, polyN, nt)
+qcf.plotPolyN(nt, polyN, E)
+qcf.plotDelta(nt, polyN, E, sym_type)
+    
+# Delta-3 Statistic
+delta3 = qcf.delta3(E, nt, polyN)
+qcf.plotDelta3(delta3)
 
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
-    
