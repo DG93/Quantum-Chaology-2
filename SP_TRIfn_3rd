@@ -192,7 +192,7 @@ class QC:
                     else:
                         R[k] += 0
             M.append(R)
-        np.savetxt('raw_matrix_%s' %sym_type, M)
+        #np.savetxt('raw_matrix_%s' %sym_type, M)
         #M = np.loadtxt('raw_matrix_%s' %sym_type)
         M = np.array(M, copy=False)
         
@@ -489,14 +489,14 @@ class QC:
             Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
         I = scipy.integrate.simps(Ix, x=yt)
         return z/I
-    
+        
     def delta3(self, redE, nt, redPolyN):
         a,b = np.polyfit(redE, nt, 1)
         varDelta3 = []
         l = len(redE)
-        for c in range(4*l//10,6*l//10):#(l//10, 9*l//10):
+        for c in range(l//4, 3*l//4):
             temp=[]
-            for L in range(1,4*l//10):#l//10+1):
+            for L in range(1,l//4+1):
                 r = redE[c-L:c+L]
                 t=((nt[c-L:c+L] - redPolyN(redE[c-L:c+L]))**2)
                 temp.append(scipy.integrate.simps(t, x=r)/L)
@@ -504,14 +504,14 @@ class QC:
         Delta3=np.sum(varDelta3, axis=0)
         for j in range(0,len(Delta3)):
             Delta3[j] = Delta3[j] / (len(varDelta3))
-        return Delta3 
+        return Delta3
             
     ################################# PLOTTING #################################
        
     def plotMap(self):
         fig = plt.figure(figsize=(15,15))
         plt.plot(self.xmap, self.ymap, 'ro')
-        plt.title('Points', fontsize=self.plottextsize+2)
+        #plt.title('Points', fontsize=self.plottextsize+2)
         plt.xlim(0,max(self.xmap)+1)
         plt.ylim(0,max(self.ymap)+1)
         plt.xlabel('$x$',fontsize=self.plottextsize+2)
@@ -534,12 +534,12 @@ class QC:
     def plotEnergies(self, s, nt, E):
         fig = plt.figure(figsize=(15,10))
         plt.plot(nt, E, label='Energy')
-        plt.title('Energy vs n', fontsize=30)
+        #plt.title('Energy vs n', fontsize=30)
         plt.xlabel('$n$',fontsize=40)
         plt.tick_params(axis='x', labelsize=20)
         plt.ylabel('$Energy$',fontsize=40)
         plt.tick_params(axis='y', labelsize=20)
-        plt.legend(prop={'size':20},loc=2)
+        #plt.legend(prop={'size':20},loc=2)
         plt.show()
         fig.savefig('SP3TRI_E_vs_n_%i.png' %s) 
         
@@ -550,29 +550,29 @@ class QC:
         plt.title('n vs Energy', fontsize=self.plottextsize+2)
         plt.xlabel('n',fontsize=self.plottextsize+2)
         plt.ylabel('Energy',fontsize=self.plottextsize+2)
-        plt.legend()
+        #plt.legend()
         plt.show()
         fig.savefig('Billiard_n_vs_E.png')
         
-    def plotPolyN(self, nt, polyN, E):
+    def plotPolyN(self, nt, polyN, E, num):
         fig = plt.figure(figsize=(15,10))
         plt.plot(nt, polyN(E), label='Polynomial fit')
         plt.plot(nt, nt, label='Perfect fit')
-        plt.title('n vs Polynomial fit in n', fontsize=self.plottextsize+2)
-        plt.xlabel('n',fontsize=self.plottextsize+2)
-        plt.ylabel('Polynomial fit in n',fontsize=self.plottextsize+2)
-        plt.legend()
+        #plt.title('n vs Polynomial fit in n', fontsize=self.plottextsize+2)
+        plt.xlabel('$n$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Polynomial fit$',fontsize=self.plottextsize+2)
+        #plt.legend()
         plt.show()
-        fig.savefig('Billiard_n_vs_polyn.png')
+        fig.savefig('Billiard_n_vs_polyn_%i.png' %num)
         
-    def plotDelta(self, nt, PolyN, E, sym_type):
+    def plotDelta(self, nt, PolyN, E, sym_type, num):
         delta=[]
         ntt = []
         for i in range(0,len(nt)-1):
             delta.append(abs(PolyN(E[i+1])-PolyN(E[i])))
             ntt.append(nt[i]-nt[0])
         fig = plt.figure(figsize=(15,10))
-        entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='bar', normed=True, label='Delta = n($E_{i+1}$) - n($E_{i}$)')
+        entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='step', normed=True, label='Delta = n($E_{i+1}$) - n($E_{i}$)')
         x = 0.5*(bin_edges[1:] + bin_edges[:-1])
         y = entries
         # hacky way of ignoring empty bins 
@@ -600,19 +600,19 @@ class QC:
         print('Average nearest neighbour spacing, D: %f' %D)
         # Analytic functions
         Ps = (1/D)*np.exp(-x/D)
-        plt.plot(x, Ps, label='Poisson')
+        #plt.plot(x, Ps, label='Poisson')
         Pw = ((np.pi*x)/(2*D**2))*np.exp((-np.pi*x**2)/(4*D**2))
-        plt.plot(x, Pw, label='Wigner')
-        plt.title('Delta histogram, %s iterations (3^%s)' %(self.iterations_label,self.m), fontsize=self.plottextsize+2)
-        plt.ylabel('Frequency',fontsize=self.plottextsize+2)
-        plt.xlabel('Delta',fontsize=self.plottextsize+2)
-        plt.legend()
+        #plt.plot(x, Pw, label='Wigner')
+        #plt.title('Delta histogram, %s iterations (3^%s) with %i order fit' %(self.iterations_label,self.m, num), fontsize=self.plottextsize+2)
+        plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
+        plt.xlabel('$s$',fontsize=self.plottextsize+2)
+        #plt.legend()
         plt.show()
-        fig.savefig('Delta_plots/%s/nbar_hist_%s_%s.png' %(sym_type, self.r, self.iterations_label))
-        filename = 'Delta_plots/%s/parameters.txt' %sym_type
-        par_file = open(filename, 'a')
-        par_file.write('%i\t%i\t%f\t%f\t%f\n' %(self.r,self.c,c[0],c[1],c[2]))
-        par_file.close()
+        fig.savefig('nbar_hist_%i_%s_%s_%s.png' %(num, sym_type, self.r, self.iterations_label))
+#        filename = 'Delta_plots/%s/parameters.txt' %sym_type
+#        par_file = open(filename, 'a')
+#        par_file.write('%i\t%i\t%f\t%f\t%f\n' %(self.r,self.c,c[0],c[1],c[2]))
+#        par_file.close()
         return c[1], c_err[1]        
         
 
@@ -654,7 +654,7 @@ class QC:
         fig = plt.figure(figsize=(15,15))
         plt.imshow(z, extent=(np.amin(X), np.amax(X), np.amin(Y), np.amax(Y)),
         cmap=cm.gist_rainbow)
-        plt.title('Density plot for %ith energy' %m, fontsize=self.plottextsize+10)
+        #plt.title('Density plot for %ith energy' %m, fontsize=self.plottextsize+10)
         plt.xlabel('$x$',fontsize=self.plottextsize+12)
         plt.ylabel('$y$',fontsize=self.plottextsize+12)
         #plt.colorbar()
@@ -665,10 +665,10 @@ class QC:
         fig = plt.figure(figsize=(15,10))
         L = np.linspace(1, len(delta3), len(delta3))
         plt.plot(L, delta3, label='Delta-3')
-        plt.title('Delta-3 vs L', fontsize=self.plottextsize+2)
+        #plt.title('Delta-3 vs L', fontsize=self.plottextsize+2)
         plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
         plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
         plt.xlim(0, max(L))
-        plt.legend()
+        #plt.legend()
         plt.show()
         fig.savefig('Delta-3.png')
