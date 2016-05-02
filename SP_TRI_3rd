@@ -14,46 +14,53 @@ import time
 
 t0 = time.clock()
 Sparseflag = False
+savedflag = True
 
 # c and r must be 3^m
-m = 3
+m = 4
 a = 1
-no_iterations = 2               # from 0->4
+no_iterations = 3               # from 0->4
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
-qcf = SPfn.QC(m,a,no_iterations)      # create object
+qcf = SPfn.QC(m,a,no_iterations)      # create object    
 qcf.CreateMap()                         # find which points lie inside
 qcf.plotMap()
 qcf.createEmap()
 qcf.FillM()                         # generates lists of indices of borders
 qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
 qcf.CreateQs()
+    
+if savedflag == False:    
+    H,Hs = qcf.genMatrix3(sym_type)
+    N = len(qcf.Q[0])
+    sH = np.zeros((N,N))
+    H_sym=[]
+    for I in range(0,N):
+        for J in range(0,N):
+                for i in qcf.sym_ind:
+                    for j in qcf.sym_ind:  
+                        sH[I,J] = sH[I,J]+H[qcf.Q[i][I],qcf.Q[j][J]] / qcf.deltaQRTR(i,I,j,J)
+                        if i == qcf.sym_ind[-1] and j == qcf.sym_ind[-1]:
+                            if (qcf.Q[i][I] not in qcf.M_sym) and (qcf.Q[j][J] not in qcf.M_sym): 
+                                H_sym.append(sH[I,J])
+                            #else: H_sym.append(0)
+    
+    shape = ( np.sqrt(len(H_sym)), np.sqrt(len(H_sym)) ) 
+    H=np.reshape( H_sym, shape)
+    
+    if UseSparseMatrices == True:
+         k = qcf.c
+         w, v = sparse.linalg.eigsh(Hs, k, which = 'SM')
+    
+    if UseSparseMatrices == False:
+        w, v = linalg.eigh(H)
+    
+    np.savetxt('evectors_%s' %sym_type, v)
+    np.savetxt('evalues_%s' %sym_type, w)
 
-
-H,Hs = qcf.genMatrix3(sym_type)
-N = len(qcf.Q[0])
-sH = np.zeros((N,N))
-H_sym=[]
-for I in range(0,N):
-    for J in range(0,N):
-            for i in qcf.sym_ind:
-                for j in qcf.sym_ind:  
-                    sH[I,J] = sH[I,J]+H[qcf.Q[i][I],qcf.Q[j][J]] / qcf.deltaQRTR(i,I,j,J)
-                    if i == qcf.sym_ind[-1] and j == qcf.sym_ind[-1]:
-                        if (qcf.Q[i][I] not in qcf.M_sym) and (qcf.Q[j][J] not in qcf.M_sym): 
-                            H_sym.append(sH[I,J])
-                        #else: H_sym.append(0)
-
-shape = ( np.sqrt(len(H_sym)), np.sqrt(len(H_sym)) ) 
-H=np.reshape( H_sym, shape)
-
-
-if UseSparseMatrices == True:
-     k = qcf.c
-     w, v = sparse.linalg.eigsh(Hs, k, which = 'SM')
-
-if UseSparseMatrices == False:
-    w, v = linalg.eigh(H)
+else:
+    v = np.loadtxt('evectors_%s' %sym_type)
+    w = np.loadtxt('evalues_%s' %sym_type)
     
 E=[]
 n = qcf.c
@@ -63,18 +70,18 @@ for m in range(0,n):
     z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
     e=(w[state_ind]/360)
     E.append(e)
-    if m==0 or m==1:
-        qcf.plotContour(X,Y,z,m)
-        qcf.plotDensity(X,Y,z,m)
+    #if m==0:
+    #qcf.plotContour(X,Y,z,m)
+    #qcf.plotDensity(X,Y,z,m)
     
 nt = np.linspace(0,n-1,n)
 qcf.plotEnergies(n, nt, E)
 
-sym_type='oo'
-polyN = np.poly1d(np.polyfit(E, nt, 6))
-qcf.plotN(E, polyN, nt)
-qcf.plotPolyN(nt, polyN, E)
-qcf.plotDelta(nt, polyN, E, sym_type)
+for i in range(1,2):
+    polyN = np.poly1d(np.polyfit(E, nt, i))
+    #qcf.plotN(E, polyN, nt)
+    qcf.plotPolyN(nt, polyN, E, i)
+    qcf.plotDelta(nt, polyN, E, sym_type, i)
     
 # Delta-3 Statistic
 delta3 = qcf.delta3(E, nt, polyN)
