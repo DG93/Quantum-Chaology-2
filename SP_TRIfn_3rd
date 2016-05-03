@@ -679,7 +679,7 @@ class QC:
         plt.tick_params(axis='x', labelsize=20)
         plt.ylabel('$Energy$',fontsize=self.plottextsize+2)
         plt.tick_params(axis='y', labelsize=20)
-        plt.legend(prop={'size':20},loc=2)
+        #plt.legend(prop={'size':20},loc=2)
         plt.xlim(0,max(nt))
         plt.show()
         fig.savefig('SP3TRI_E_vs_n_all.png') 
@@ -705,7 +705,7 @@ class QC:
         plt.ylabel('$Fluctuations$',fontsize=self.plottextsize+2)
         #plt.ylim(0,max(nt))
         plt.xlim(0,max(nt))
-        plt.legend()
+        #plt.legend()
         plt.show()
         fig.savefig('Billiard_n_vs_polyn_all.png')
         
@@ -748,7 +748,7 @@ class QC:
         plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
         plt.xlabel('$Nearest$ $Neighbour$ $Energy$ $Spacing,$ $s$',fontsize=self.plottextsize+2)
         plt.xlim(0, 5)
-        plt.legend()
+        #plt.legend()
         plt.show()
         fig.savefig('nbar_hist_all.png')
         return cAll, c_errAll
@@ -795,7 +795,7 @@ class QC:
         plt.xlabel('$interval,$ $L$',fontsize=self.plottextsize+2)
         plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
         plt.xlim(1, max(L))
-        plt.legend()
+        #plt.legend()
         plt.show()
         fig.savefig('Delta-3.png')
         
