@@ -1,126 +1,800 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 30 17:35:32 2015
-
-2D Sierpinski Carpet
-@author: Dan Goldsmith & Dan Locke
-"""
 import numpy as np
-np.set_printoptions(threshold=np.nan)
-from numpy import linalg
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.colors import LogNorm
+import scipy.integrate
 from scipy import sparse
-import SP_TRIfn_3rd as SPfn
-import time
+from scipy.optimize import curve_fit
 
-t0 = time.clock()
-Sparseflag = False
-savedflag = True
+class QC:
+    def __init__(self,m,a, no_iterations):
+        self.plottextsize = 24
+        plt.rcParams.update({'font.size': self.plottextsize})
+        self.r = 3**m
+        self.c = 3**m
+        self.sidelength = (self.c+1)//2
+        self.x = (self.c-1)*a#float(input("Enter width (x axis) of well: "))
+        self.y = (self.r-1)*a#float(input("Enter depth (y axis) of well: "))
+        self.xmap=[]
+        self.ymap=[]
+        self.Umap=[]
+        self.Q=[]
+        
+        self.M_centre=[]
+        self.M=[]            # contains all elements of vert&hor, no repeats
+        self.M_vert=[]
+        self.M_hor=[]
+        self.Mdiag=[]        # contains all elements of 2 diags, no repeats
+        self.MdiagA=[]
+        self.MdiagB=[]
+        
+        self.xt = np.linspace(0,self.x,self.c+2)
+        self.yt = np.linspace(0,self.y,self.r+2)
+        self.M_sym=[]
+        self.sym_ind=[]
+        self.no_points=0
+        self.m = m
+        self.iterations=no_iterations-m
+        self.iterations_label = no_iterations
+        
+        self.emap=[]
+        self.exmap=[]
+        self.eymap=[]
+        
+    def I(self,i,j):
+        I=0
+        for k in range(0,j-1):
+            I=I+self.c
+        I=I+i
+        return I
+        
+    def ij(self,I):
+        k=0
+        while I-self.c>0:
+            I=I-self.c
+            k=k+1
+        j=k+1
+        i=I
+        return i,j
+        
+    def createEmap(self):
+        # Images from external boundaries
+        for i in range(0,len(self.exmap)):
+            emap_t=[]
+            a=self.exmap[i]
+            b=self.eymap[i]
+            #print(a,b)
+            if a==self.c or b==self.r or b==1 or a==1 or a==self.c-1 or b==self.r-1 or b==2 or a==2:
+                if a==self.c: 
+                    emap_t.append(1)
+                    emap_t.append(5)
+                if b==self.r: 
+                    emap_t.append(2)
+                    emap_t.append(6)
+                if b==1: 
+                    emap_t.append(3)
+                    emap_t.append(7)
+                if a==1: 
+                    emap_t.append(4)
+                    emap_t.append(8)
+                if a==self.c-1 and np.isnan(self.Umap[self.c-2][b-1])==0: emap_t.append(5)
+                if b==self.r-1 and np.isnan(self.Umap[a-1][self.r-2])==0: emap_t.append(6)
+                if b==2 and np.isnan(self.Umap[a-1][1])==0: emap_t.append(7)
+                if a==2 and np.isnan(self.Umap[1][b-1])==0: emap_t.append(8)
+            else: emap_t.append(0)
+            self.emap.append(emap_t)
+        # Images from internal boundaries   
+        for j in range(0,self.r):
+            for i in range(0,self.c):
+                k=np.isnan(self.Umap[i][j]) # 1,NaN here not 1,0 
+                n=i+1
+                m=j+1
+                if k==1: # If in boundary
+                    if np.isnan(self.Umap[i-1][j])==0: 
+                        self.emap[self.I(n-1,m)-1].append(20)
+                        if i+2<self.r: self.emap[self.I(n-1,m)-1].append(60)
+                        if i-2>=0:
+                            if np.isnan(self.Umap[i-2][j])==0: self.emap[self.I(n-2,m)-1].append(60)
+                        
+                    if np.isnan(self.Umap[i+1][j])==0: 
+                        self.emap[self.I(n+1,m)-1].append(30)
+                        if i-2>=0: self.emap[self.I(n+1,m)-1].append(70)
+                        if i+2<self.r:
+                            if np.isnan(self.Umap[i+2][j])==0: self.emap[self.I(n+2,m)-1].append(70)
+                        
+                    if np.isnan(self.Umap[i][j-1])==0: 
+                        self.emap[self.I(n,m-1)-1].append(10)
+                        if j+2<self.r: self.emap[self.I(n,m-1)-1].append(50)
+                        if j-2>=0: 
+                            if np.isnan(self.Umap[i][j-2])==0: self.emap[self.I(n,m-2)-1].append(50)
+                        
+                    if np.isnan(self.Umap[i][j+1])==0: 
+                        self.emap[self.I(n,m+1)-1].append(40)
+                        if j-2>=0: self.emap[self.I(n,m+1)-1].append(80)
+                        if j+2<self.r: 
+                            if np.isnan(self.Umap[i][j+2])==0: self.emap[self.I(n,m+2)-1].append(80)
+                        
+                    
+    
+    def genMatrix3(self, sym_type):
+        i=self.exmap
+        j=self.eymap
+        A=980.
+        B=-270.
+        C=27.
+        D=-2.
+        M = []
+        for marker in range(0,len(i)):
+            R=[0]*len(i)
+            for k in range(0,len(i)):
+                if marker == 0:
+                    if k == marker:
+                        R[k] += A
+                    elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                        R[k] += B
+                    elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                        R[k] += B
+                    elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                        R[k] += C
+                    elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                        R[k] += C
+                    elif (i[k] == i[marker]+3 and j[k] == j[marker]):
+                        R[k] += D
+                    elif (i[k] == i[marker] and j[k] == j[marker]+3):
+                        R[k] += D
+                    else:
+                        R[k] += 0                    
+                elif marker == (len(i)-1):
+                    if k == marker:
+                        R[k] += A
+                    elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                        R[k] += B        
+                    elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                        R[k] += B
+                    elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                        R[k] += C        
+                    elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                        R[k] += C
+                    elif (i[k] == i[marker]-3 and j[k] == j[marker]):
+                        R[k] += D        
+                    elif (i[k] == i[marker] and j[k] == j[marker]-3):
+                        R[k] += D
+                    else:
+                        R[k] += 0                    
+                else:
+                    if k == marker:
+                        R[k] += A
+                    elif (i[k] == i[marker]+1 and j[k] == j[marker]):
+                        R[k] += B
+                    elif (i[k] == i[marker]-1 and j[k] == j[marker]):
+                        R[k] += B
+                    elif (i[k] == i[marker] and j[k] == j[marker]+1):
+                        R[k] += B
+                    elif (i[k] == i[marker] and j[k] == j[marker]-1):
+                        R[k] += B
+                    elif (i[k] == i[marker]+2 and j[k] == j[marker]):
+                        R[k] += C
+                    elif (i[k] == i[marker]-2 and j[k] == j[marker]):
+                        R[k] += C
+                    elif (i[k] == i[marker] and j[k] == j[marker]+2):
+                        R[k] += C
+                    elif (i[k] == i[marker] and j[k] == j[marker]-2):
+                        R[k] += C
+                    elif (i[k] == i[marker]+3 and j[k] == j[marker]):
+                        R[k] += D
+                    elif (i[k] == i[marker]-3 and j[k] == j[marker]):
+                        R[k] += D
+                    elif (i[k] == i[marker] and j[k] == j[marker]+3):
+                        R[k] += D
+                    elif (i[k] == i[marker] and j[k] == j[marker]-3):
+                        R[k] += D
+                    else:
+                        R[k] += 0
+            M.append(R)
+        M = np.array(M, copy=False)
+        
+        # Set points in/thru boundaries to zero
+        for k in range(0,len(self.Umap)):
+            for n in range(0,len(self.Umap)):
+                if np.isnan(self.Umap[k][n])==1:
+                    for m in range(0,len(self.xmap)):
+                        M[self.I(k+1,n+1)-1,m]=0
+                        M[m,self.I(k+1,n+1)-1]=0
+                    L=0
+                    while n+1-L>0:
+                        M[self.I(k+1,n+2)-1,self.I(k+1,n+1-L)-1]=0
+                        M[self.I(k+1,n+1-L)-1,self.I(k+1,n+2)-1]=0
+                        L=L+1
+                    L=0
+                    while k+1-L>0:
+                        M[self.I(k+2,n+1)-1,self.I(k+1-L,n+1)-1]=0
+                        M[self.I(k+1-L,n+1)-1,self.I(k+2,n+1)-1]=0
+                        L=L+1
+                        
+        # Add images
+        Im=-C
+        Im2=-D
+        for k in range(0,len(self.emap)):
+            i,j=self.ij(k+1)
+            for n in range(0,len(self.emap[k])):
+                if self.emap[k][n]==1:
+                    #print(i,j,I(i,j-c+1,c)-1,k)
+                    M[self.I(i,j-self.c+1)-1,k]+=Im
+    
+                if self.emap[k][n]==2:
+                    #print(i,j,I(i-r+1,j,c)-1,k)
+                    M[self.I(i-self.r+1,j)-1,k]+=Im
+    
+                if self.emap[k][n]==3:
+                    #print(i,j,I(i+r-1,j,c)-1,k)
+                    M[self.I(i+self.r-1,j)-1,k]+=Im
+    
+                if self.emap[k][n]==4:
+                    #print(i,j,I(i,j+c-1,c)-1,k)
+                    M[self.I(i,j+self.c-1)-1,k]+=Im
+                    
+                if self.emap[k][n]==5:
+                    #print(i,j,I(i,j-c+2,c)-1,k)
+                    M[self.I(i,j-self.c+2)-1,k]+=Im2
+    
+                if self.emap[k][n]==6:
+                    #print(i,j,I(i-r+2,j,c)-1,k)
+                    M[self.I(i-self.r+2,j)-1,k]+=Im2
+    
+                if self.emap[k][n]==7:
+                    #print(i,j,I(i+r-2,j,c)-1,k)
+                    M[self.I(i+self.r-2,j)-1,k]+=Im2
+    
+                if self.emap[k][n]==8:
+                    #print(i,j,I(i,j+c-2,c)-1,k)
+                    M[self.I(i,j+self.c-2)-1,k]+=Im2 
+                    
+                if self.emap[k][n]==10:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i-1][j])==0:
+                            M[self.I(i,j+1)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j+1
+                        
+                if self.emap[k][n]==20:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i][j-1])==0:
+                            M[self.I(i+1,j)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i+1
+                        
+                if self.emap[k][n]==30:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i-2][j-1])==0:
+                            M[self.I(i-1,j)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i-1
+                        
+                if self.emap[k][n]==40:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i-1][j-2])==0:
+                            M[self.I(i,j-1)-1,k]+=Im
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j-1
+                        
+                if self.emap[k][n]==50:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i-1][j+1])==0:
+                            M[self.I(i,j+2)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j+1
+                 
+                if self.emap[k][n]==60:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i+1][j-1])==0:
+                            M[self.I(i+2,j)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i+1
+                 
+                if self.emap[k][n]==70:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i-3][j-1])==0:
+                            M[self.I(i-2,j)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: i=i-1
+                 
+                if self.emap[k][n]==80:
+                    Flag=False
+                    while Flag==False:
+                        if np.isnan(self.Umap[i-1][j-3])==0:
+                            M[self.I(i,j-2)-1,k]+=Im2
+                            Flag=True
+                            i,j=self.ij(k+1)
+                        else: j=j-1
+                 
+        # Delete points in boundaries
+        d=[]
+        for k in range(0,len(self.Umap)):
+            for n in range(0,len(self.Umap)):
+                if np.isnan(self.Umap[k][n])==1:
+                    d.append(self.I(k+1,n+1)-1)
+        d.sort(reverse=True)
+        for i in range(0,len(d)):
+            M=np.delete(M,d[i],axis=0)
+            M=np.delete(M,d[i],axis=1)
+    
+        # Create sparse matrix
+        N = M.tolist()        
+        N = sparse.csr_matrix(N)
+        np.savetxt('final_matrix_%s' %self.iterations_label, M)
+        return M,N
+        
+                    
+    def FillM(self):
+        no_points=len(self.xmap)
+        for I in range(0,no_points):
+                if self.xmap[I]==self.sidelength: self.M_vert.append(I)
+                if self.ymap[I]==self.sidelength: self.M_hor.append(I)
+                if self.xmap[I]==self.sidelength or self.ymap[I]==self.sidelength: self.M.append( I )
+                if self.xmap[I]==self.sidelength and self.ymap[I]==self.sidelength: self.M_centre.append( I )
+                if self.xmap[I]==self.ymap[I]: self.MdiagA.append(I)
+                if self.xmap[I]==self.c+1-self.ymap[I]: self.MdiagB.append(I)
+                if self.xmap[I]==self.ymap[I] or self.xmap[I]==self.c+1-self.ymap[I]: self.Mdiag.append(I)
 
-# c and r must be 3^m
-m = 4
-a = 1
-no_iterations = 3
-UseSparseMatrices = False
-sym_type=[1,1,1,1] # 1 is odd, 0 is even
-qcf = SPfn.QC(m,a,no_iterations)      # create object    
-qcf.CreateMap()                         # find which points lie inside
-qcf.plotMap()
-qcf.createEmap()
-qcf.FillM()                         # generates lists of indices of borders
-qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
-qcf.CreateQs()
     
-if savedflag == False:   
-    H,Hs = qcf.genMatrix3(sym_type)
-    N = len(qcf.Q[0])
-    sH = np.zeros((N,N))
-    H_sym=[]
-    for I in range(0,N):
-        for J in range(0,N):
-                for i in qcf.sym_ind:
-                    for j in qcf.sym_ind:  
-                        sH[I,J] = sH[I,J]+H[qcf.Q[i][I],qcf.Q[j][J]] / qcf.deltaQRTR(i,I,j,J)
-                        if i == qcf.sym_ind[-1] and j == qcf.sym_ind[-1]:
-                            if (qcf.Q[i][I] not in qcf.M_sym) and (qcf.Q[j][J] not in qcf.M_sym): 
-                                H_sym.append(sH[I,J])
-                            #else: H_sym.append(0)
+    def delta(self,var,a):
+        if var in a: return 1
+        else:        return 0
     
-    shape = ( np.sqrt(len(H_sym)), np.sqrt(len(H_sym)) ) 
-    H=np.reshape( H_sym, shape)
-    
-    if UseSparseMatrices == True:
-         k = qcf.c
-         w, v = sparse.linalg.eigsh(Hs, k, which = 'SM')
-    
-    if UseSparseMatrices == False:
-        w, v = linalg.eigh(H)
-    
-    np.savetxt('evectors_%s' %no_iterations, v)
-    np.savetxt('evalues_%s' %no_iterations, w)
+    def deltaQRTR(self,i,I,j,J):
+        # check it works right for diags
+        DQ1 = (1+self.delta(self.Q[i][I],self.M_centre))*(1+self.delta(self.Q[j][J],self.M_centre))*(1+self.delta(self.Q[i][I],self.M))*(1+self.delta(self.Q[j][J],self.M))
+        DQ2 = (1+self.delta(self.Q[i][I],self.M_centre))*(1+self.delta(self.Q[j][J],self.M_centre))*(1+self.delta(self.Q[i][I],self.Mdiag))*(1+self.delta(self.Q[j][J],self.Mdiag))
+        return np.power(DQ1*DQ2,1/2)
+        
+        
+    def inside(self, i, j):
+        x = j-1
+        y = i-1
+        iter_t = 1
+        while(x>0 or y>0): 
+            if(x%3==1 and y%3==1):
+                if iter_t > -self.iterations: 
+                    return 0
+            x = x // 3 
+            y = y // 3
+            iter_t += 1
+        return 1 
 
-else:
-    v = np.loadtxt('evectors_%s' %no_iterations)
-    w = np.loadtxt('evalues_%s' %no_iterations)
+    def CreateMap(self):
+        k=0
+        for i in range(1,self.r+1):
+            Umap_t=[]
+            for j in range(1,self.r+1):
+                self.eymap.append(j)
+                self.exmap.append(i)
+                if self.inside(i,j): 
+                    self.xmap.append(j)
+                    self.ymap.append(i)
+                    Umap_t.append(k)
+                    k+=1
+                    
+                else: 
+                    Umap_t.append(np.nan)
+            self.Umap.append(Umap_t)
+        self.no_points=(len(self.xmap))
+
+    def Symmetry(self, sym_type):
+        
+        sym_list = [0,1,2,3,4,5,6,7]
+        
+        if sym_type[0]==1: 
+            for m in self.M_vert:
+                self.M_sym.append(m)
+            for i in [2,3,4,5]:
+                if i in sym_list: sym_list.remove(i)
+            
+        if sym_type[1]==1: 
+            for m in self.M_hor: 
+                self.M_sym.append(m)
+            for i in [4,5,6,7]:
+                if i in sym_list: sym_list.remove(i)
+            
+        if sym_type[2]==1: 
+            for m in self.MdiagA: 
+                self.M_sym.append(m)
+            for i in [1,2,3,4]:
+                if i in sym_list: sym_list.remove(i)
+            
+        if sym_type[3]==1: 
+            for m in self.MdiagB: 
+                self.M_sym.append(m)
+            for i in [3,4,5,6]:
+                if i in sym_list: sym_list.remove(i)
+                
+        self.sym_ind = sym_list
+
     
+    def CreateQs(self):
+        i = self.xmap
+        sidelength = (self.c+1)//2
+        no_points = len(i)
+        self.Q=[[] for x in range(8)]
 
-# For 1 iterations   
-#E=[]
-#n = len(w)
-#X, Y = np.meshgrid(qcf.xt, qcf.yt)
-#for m in range(0,n):    
-#    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-#    z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
-#    e=(w[state_ind]/360)
-#    E.append(e)
-#    if m==0:
-#        qcf.plotContour(X,Y,z,m)
-#        qcf.plotDensity(X,Y,z,m)
-    
-#nt = np.linspace(0,n-1,n)
-#qcf.plotEnergies(n, nt, E)
-#
-#for i in range(1,9):
-#    polyN = np.poly1d(np.polyfit(E, nt, i))
-#    #qcf.plotN(E, polyN, nt)
-#    qcf.plotPolyN(nt, polyN, E, i)
-#    qcf.plotDelta(nt, polyN, E, i)
-#    
-## Delta-3 Statistic
-#delta3 = qcf.delta3(E, nt, polyN)
-#qcf.plotDelta3(delta3)
+        for i in range(0,sidelength):
+            for j in range(0,sidelength):
+                if j<=i:
+                    if np.isnan(self.Umap[i][j]) == False:
+                        self.Q[0].append(self.Umap[i][j])
+                        self.Q[3].append(self.Umap[i][-(j+1)])
+                        self.Q[4].append(self.Umap[-(i+1)][-(j+1)])
+                        self.Q[7].append(self.Umap[-(i+1)][j])
+                        
+                        self.Q[1].append(self.Umap[j][i])
+                        self.Q[2].append(self.Umap[j][-(i+1)])
+                        self.Q[5].append(self.Umap[-(j+1)][-(i+1)])
+                        self.Q[6].append(self.Umap[-(j+1)][i]) 
+        
 
-# For all iterations
-V=[]    
-W=[]
-for i in range(0,no_iterations+1):
-    v = np.loadtxt('evectors_%s' %i)
-    w = np.loadtxt('evalues_%s' %i)
-    V.append(v)
-    W.append(w)
-    
-E=[]
-X, Y = np.meshgrid(qcf.xt, qcf.yt)
-n=min(len(W[0]),len(W[1]),len(W[2]),len(W[3]))
-for i in range(0,no_iterations+1):
-    Etemp=[]
-    w=W[i]
-    for m in range(0,n):    
-        state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-        e=(w[state_ind]/360)
-        Etemp.append(e)
-    E.append(Etemp)
+    def genMatrix(self, sparseflag):
+        i = self.xmap
+        sidelength = (self.c+1)//2
+        no_points = len(i)
+        M = []        
+        for I in range(0,no_points):
+            R=np.zeros(no_points)
+            for J in range(0,no_points):
+                R[I] = 4.0
+                if (J!=I and self.adjacentpoint(I,J)): R[J] = -1
+            M.append(R)
+        if sparseflag == 1: M2 = sparse.csr_matrix(M)
+        if sparseflag == 0: M2 = np.array(M)
+        return M2
+        
+        
+    def adjacentpoint(self, I,J):
+        adjbool = 0
+        if (abs(self.xmap[J]-self.xmap[I])==1) and (self.ymap[J]== self.ymap[I]): adjbool = 1-adjbool
+        if (abs(self.ymap[J]-self.ymap[I])==1) and (self.xmap[J]== self.xmap[I]): adjbool = 1-adjbool
+        return adjbool
 
+    def arrayFromZ(self, v, xt, yt):
+        z= np.zeros( (self.r+2, self.c+2) )
+        for q in range(0,8):
+            for i in self.M_sym:
+                if i in self.Q[q]: self.Q[q].remove(i)
+            for k in range(0,len(v)):
+                    z[self.ymap[self.Q[q][k]]][self.xmap[self.Q[q][k]]] += v[k]
+        # need to divide overlap of even sym by sqrt(2)
+        #print z
+        #print self.Q
+        #print self.M_sym
+        #print len(self.xmap)
 
-nt = np.linspace(0,n-1,n)
-qcf.plotAllEnergies(nt, E)
-polyN=[]
-for  i in range(0,no_iterations+1):
-    polyN.append(np.poly1d(np.polyfit(E[i], nt, 5)))
-qcf.plotAllN(E, polyN, nt)
-qcf.plotAllPolyN(nt, polyN, E)
-qcf.plotAllDelta(nt, polyN, E)
-delta3 = qcf.delta3All(E, nt, polyN)
-qcf.plotAllDelta3(delta3)
+        z = z*z
+        Ix=[]
+        for i in range(0,self.r+2):
+            Ix.append(scipy.integrate.simps(z[i,:], x=xt))    
+        I = scipy.integrate.simps(Ix, x=yt)
+        return z/I
+        
+    def delta3(self, redE, nt, redPolyN):
+        a,b = np.polyfit(redE, nt, 1)
+        varDelta3 = []
+        l = len(redE)
+        for c in range(l//4, 3*l//4):
+            temp=[]
+            for L in range(1,l//4+1):
+                r = redE[c-L:c+L]
+                t=((nt[c-L:c+L] - redPolyN(redE[c-L:c+L]))**2)
+                temp.append(scipy.integrate.simps(t, x=r)/L)
+            varDelta3.append(temp)
+        Delta3=np.sum(varDelta3, axis=0)
+        for j in range(0,len(Delta3)):
+            Delta3[j] = Delta3[j] / (len(varDelta3))
+        return Delta3
+            
+    ################################# PLOTTING #################################
+       
+    def plotMap(self):
+        fig = plt.figure(figsize=(15,15))
+        plt.plot(self.xmap, self.ymap, 'ro')
+        #plt.title('Points', fontsize=self.plottextsize+2)
+        plt.xlim(0,max(self.xmap)+1)
+        plt.ylim(0,max(self.ymap)+1)
+        plt.xlabel('$x$',fontsize=self.plottextsize+2)
+        plt.ylabel('$y$',fontsize=self.plottextsize+2)
+        plt.show()
+        fig.savefig('Map.png')  
 
-comp_time = (time.clock()-t0)/60.0
-print("Time taken: %f mins" %comp_time)
+    def plot2Dpsi(self, X,Y,z,m): 
+        fig = plt.figure(figsize=(14,12))
+        ax = fig.add_subplot(111, projection='3d')
+        surf = ax.plot_surface(X,Y,z, cmap=cm.coolwarm, cstride=1, rstride=1)
+        fig.colorbar(surf)
+        plt.xlabel('$x_i$',fontsize=self.plottextsize+2)
+        plt.ylabel('$y_i$',fontsize=self.plottextsize+2)
+        ax.set_zlabel('$|\psi|^2$',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_%i.png' %m)
+        
+    def plotEnergies(self, s, nt, E):
+        fig = plt.figure(figsize=(15,10))
+        plt.plot(nt, E, label='Energy')
+        #plt.title('Energy vs n', fontsize=30)
+        plt.xlabel('$n$',fontsize=40)
+        plt.tick_params(axis='x', labelsize=20)
+        plt.ylabel('$Energy$',fontsize=40)
+        plt.tick_params(axis='y', labelsize=20)
+        #plt.legend(prop={'size':20},loc=2)
+        plt.show()
+        fig.savefig('SP3TRI_E_vs_n_%i.png' %s) 
+        
+    def plotN(self, E,polyN, nt):
+        fig = plt.figure(figsize=(15,10))
+        plt.plot(polyN(E), E, label='Polynomial fit')
+        plt.plot(nt, E, label='Numeric')
+        plt.title('n vs Energy', fontsize=self.plottextsize+2)
+        plt.xlabel('n',fontsize=self.plottextsize+2)
+        plt.ylabel('Energy',fontsize=self.plottextsize+2)
+        #plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_E.png')
+        
+    def plotPolyN(self, nt, polyN, E, num):
+        fig = plt.figure(figsize=(15,10))
+        plt.plot(nt, polyN(E), label='Polynomial fit')
+        plt.plot(nt, nt, label='Perfect fit')
+        #plt.title('n vs Polynomial fit in n', fontsize=self.plottextsize+2)
+        plt.xlabel('$n$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Polynomial fit$',fontsize=self.plottextsize+2)
+        #plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_polyn_%i.png' %num)
+        
+    def plotDelta(self, nt, PolyN, E, num):
+        delta=[]
+        ntt = []
+        for i in range(0,len(nt)-1):
+            delta.append(abs(PolyN(E[i+1])-PolyN(E[i])))
+            ntt.append(nt[i]-nt[0])
+        fig = plt.figure(figsize=(15,10))
+        entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='step', normed=True, label='Delta = n($E_{i+1}$) - n($E_{i}$)')
+        x = 0.5*(bin_edges[1:] + bin_edges[:-1])
+        y = entries
+        # hacky way of ignoring empty bins 
+        # Note: ROOT does this for least squares fits to histograms
+        xy=[]
+        xy.append(x)
+        xy.append(y)        
+        x = xy[0][xy[1]!=0]
+        y = xy[1][xy[1]!=0]
+        def fitfunc(x, *p):
+            return p[0]*(x**p[1])*np.exp(-(x**(p[1]+1))/p[2])
+        init = [1.2,0,1.2]
+        sigma_y = np.sqrt(y)  # Adding Poisson errors in y
+        popt, pcov  = curve_fit(fitfunc, x, y, p0=init, sigma=sigma_y, absolute_sigma=False)
+        c = popt
+        c_err = np.sqrt(np.diag(pcov))
+        print('Fit Coefficients: {}, {}, {}'.format(c[0],c[1],c[2]))
+        x_hd = np.linspace(0,bin_edges[-1],100)
+        x=x_hd        
+        plt.plot(x, fitfunc(x, *c), label='Fit: b = %1.3f \u00B1 %1.3f' %(c[1], c_err[1]) )
+        dn=[]
+        for i in range(0,len(nt)-1):
+            dn.append(PolyN(E[i+1])-PolyN(E[i]))
+        D = np.mean(dn)
+        print('Average nearest neighbour spacing, D: %f' %D)
+        # Analytic functions
+        Ps = (1/D)*np.exp(-x/D)
+        #plt.plot(x, Ps, label='Poisson')
+        Pw = ((np.pi*x)/(2*D**2))*np.exp((-np.pi*x**2)/(4*D**2))
+        #plt.plot(x, Pw, label='Wigner')
+        #plt.title('Delta histogram, %s iterations (3^%s) with %i order fit' %(self.iterations_label,self.m, num), fontsize=self.plottextsize+2)
+        plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
+        plt.xlabel('$s$',fontsize=self.plottextsize+2)
+        plt.legend()
+        plt.show()
+        fig.savefig('nbar_hist_%i_%s_%s.png' %(num,  self.r, self.iterations_label))
+#        filename = 'Delta_plots/%s/parameters.txt' %sym_type
+#        par_file = open(filename, 'a')
+#        par_file.write('%i\t%i\t%f\t%f\t%f\n' %(self.r,self.c,c[0],c[1],c[2]))
+#        par_file.close()
+        return c[1], c_err[1]        
+        
+
+    def masking(self, z):
+        # Masking usually works with quads, this is a hacky way of preserving boundary zeros
+        # although it doesn't work correctly anyway, needs to mask until half way between points. SHIT.
+        for i in range(1,self.c+1):
+            for j in range(1,self.c+1):
+                if z[i][j]==0:
+                    if z[i+1][j]==0 and z[i-1][j]==0 and z[i][j-1]==0 and z[i][j+1]==0:
+                        z[i][j] = np.nan
+        return z   
+        
+    def plotContour(self,X,Y,z,m):
+        fig = plt.figure(figsize=(15,15))
+        # overlay the well - bit fucked, especially for smaller numbers of points
+        for i in range(0,self.r):
+            for j in range(0,self.r):
+                if np.isnan(self.Umap[i][j]): z[i+1][j+1] = np.nan
+        #z[ z==0 ] = np.nan              # convert zeros to Nan for masking TOO BIG
+        #z = self.masking(z)             # mask internal zeros only TOO SMALL
+        # should probably create a subplot using internal zeros of z with twice as many points
+        # either that or just write a function that defines centres and sizes of all squares; cba
+        no_bins = 500
+        lev = np.linspace(0,np.nanmax(z),no_bins)
+        plt.gca().patch.set_color('1')
+        my_cmap = plt.cm.get_cmap('gist_rainbow')
+        plt.contourf(X, Y, z, levels = lev , cmap=my_cmap)
+        #z_min, z_max = 0, np.abs(z).max()
+        #plt.pcolormesh(X, Y, z, cmap=my_cmap, vmin=z_min, vmax=z_max)
+        plt.title('Contour plot for %ith energy' %m, fontsize=self.plottextsize+10)
+        plt.xlabel('$x$',fontsize=self.plottextsize+12)
+        plt.ylabel('$y$',fontsize=self.plottextsize+12)
+        #plt.colorbar()
+        #plt.show()
+        fig.savefig('Contour_%i_%s_%s.png' %(m, self.r, self.iterations_label))
+            
+    def plotDensity(self,X,Y,z,m):
+        fig = plt.figure(figsize=(15,15))
+        plt.imshow(z, extent=(np.amin(X), np.amax(X), np.amin(Y), np.amax(Y)),
+        cmap=cm.gist_rainbow)
+        plt.xlabel('$x$',fontsize=self.plottextsize+12)
+        plt.ylabel('$y$',fontsize=self.plottextsize+12)
+        #plt.colorbar()
+        #plt.show()
+        fig.savefig('Density_%i_%s_%s.png' %(m, self.r, self.iterations_label))
+        
+    def plotDelta3(self, delta3):
+        fig = plt.figure(figsize=(15,10))
+        L = np.linspace(1, len(delta3), len(delta3))
+        plt.plot(L, delta3, label='Delta-3')
+        plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
+        plt.xlim(0, max(L))
+        #plt.legend()
+        plt.show()
+        fig.savefig('Delta-3.png')
+        
+    ############################# PLOTTING ALL #################################
+        
+    def plotAllEnergies(self, nt, E):
+        fig = plt.figure(figsize=(15,10))
+        for i in range(0,self.iterations_label+1):
+            plt.plot(nt, E[i], label='Energy %i' %i)
+        plt.xlabel('$n$',fontsize=40)
+        plt.tick_params(axis='x', labelsize=20)
+        plt.ylabel('$Energy$',fontsize=40)
+        plt.tick_params(axis='y', labelsize=20)
+        plt.legend(prop={'size':20},loc=2)
+        plt.xlim(0,max(nt))
+        plt.show()
+        fig.savefig('SP3TRI_E_vs_n_all.png') 
+        
+    def plotAllN(self, E,polyN, nt):
+        fig = plt.figure(figsize=(15,10))
+        for i in range(0,self.iterations_label+1):
+            plt.plot(polyN[i](E[i]), E[i], label='P%i'%i)
+            plt.plot(nt, E[i], label='N%i'%i, linestyle='--')
+        plt.xlabel('n',fontsize=self.plottextsize+2)
+        plt.ylabel('Energy',fontsize=self.plottextsize+2)
+        plt.xlim(0,max(nt))
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_E_all.png')
+        
+    def plotAllPolyN(self, nt, polyN, E):
+        fig = plt.figure(figsize=(15,10))
+        for i in range(0,self.iterations_label+1):
+            plt.plot(nt, polyN[i](E[i])-nt, label='P%i'%i)
+        #plt.plot(nt, nt, label='Perfect fit', linestyle='--')
+        plt.xlabel('$n$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Polynomial fit$',fontsize=self.plottextsize+2)
+        #plt.ylim(0,max(nt))
+        plt.xlim(0,max(nt))
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_polyn_all.png')
+        
+    def plotAllDelta(self, nt, PolyN, E):
+        fig = plt.figure(figsize=(15,10))
+        cAll=[]
+        c_errAll=[]
+        for k in range(0,self.iterations_label+1):
+            delta=[]
+            ntt = []
+            for i in range(0,len(nt)-1):
+                delta.append(abs(PolyN[k](E[k][i+1])-PolyN[k](E[k][i])))
+                ntt.append(nt[i]-nt[0])
+            entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='step', normed=True, label='Delta %i'%k)
+            x = 0.5*(bin_edges[1:] + bin_edges[:-1])
+            y = entries
+            xy=[]
+            xy.append(x)
+            xy.append(y)        
+            x = xy[0][xy[1]!=0]
+            y = xy[1][xy[1]!=0]
+            def fitfunc(x, *p):
+                return p[0]*(x**p[1])*np.exp(-(x**(p[1]+1))/p[2])
+            init = [1.2,0,1.2]
+            sigma_y = np.sqrt(y)  # Adding Poisson errors in y
+            popt, pcov  = curve_fit(fitfunc, x, y, p0=init, sigma=sigma_y, absolute_sigma=False)
+            c = popt
+            c_err = np.sqrt(np.diag(pcov))
+            print('Fit Coefficients: {}, {}, {}'.format(c[0],c[1],c[2]))
+            x_hd = np.linspace(0,bin_edges[-1],100)
+            x=x_hd
+            plt.plot(x, fitfunc(x, *c), label='b%i = %1.3f \u00B1 %1.3f' %(k, c[1], c_err[1]))
+            dn=[]
+            for i in range(0,len(nt)-1):
+                dn.append(PolyN[k](E[k][i+1])-PolyN[k](E[k][i]))
+            D = np.mean(dn)
+            print('Average nearest neighbour spacing, D: %f' %D)
+            cAll.append(c[1])
+            c_errAll.append(c_err[1])
+        plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
+        plt.xlabel('$s$',fontsize=self.plottextsize+2)
+        plt.xlim(0, 5)
+        plt.legend()
+        plt.show()
+        fig.savefig('nbar_hist_all.png')
+        return cAll, c_errAll
+        
+    def delta3All(self, redE, nt, redPolyN):
+        Delta3All=[]
+        for i in range(0,self.iterations_label+1):
+            a,b = np.polyfit(redE[i], nt, 1)
+            varDelta3 = []
+            l = len(redE[i])
+            for c in range(l//4, 3*l//4):
+                temp=[]
+                for L in range(1,l//4+1):
+                    r = redE[i][c-L:c+L]
+                    t=((nt[c-L:c+L] - redPolyN[i](redE[i][c-L:c+L]))**2)
+                    temp.append(scipy.integrate.simps(t, x=r)/L)
+                varDelta3.append(temp)
+            Delta3=np.sum(varDelta3, axis=0)
+            for j in range(0,len(Delta3)):
+                Delta3[j] = Delta3[j] / (len(varDelta3))
+            Delta3All.append(Delta3)
+        return Delta3All
+        
+    def plotAllDelta3(self, delta3):
+        fig = plt.figure(figsize=(15,10))
+        LL = min(len(delta3[0]),len(delta3[1]),len(delta3[2]),len(delta3[3]))
+        L = np.linspace(1, LL, LL)
+        d=[]
+        d0=[]
+        d1=[]
+        d2=[]
+        d3=[]
+        for i in range(0,LL):
+            d0.append(delta3[0][i])
+            d1.append(delta3[1][i])
+            d2.append(delta3[2][i])
+            d3.append(delta3[3][i])
+        d.append(d0)
+        d.append(d1)
+        d.append(d2)
+        d.append(d3)
+        for i in range(0,self.iterations_label+1):   
+            plt.plot(L, d[i], label='Delta-3 %i'%i)
+        plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
+        plt.xlim(1, max(L))
+        plt.legend()
+        plt.show()
+        fig.savefig('Delta-3.png')
