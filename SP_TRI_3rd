@@ -19,7 +19,7 @@ savedflag = True
 # c and r must be 3^m
 m = 4
 a = 1
-no_iterations = 3               # from 0->4
+no_iterations = 3
 UseSparseMatrices = False
 sym_type=[1,1,1,1] # 1 is odd, 0 is even
 qcf = SPfn.QC(m,a,no_iterations)      # create object    
@@ -30,7 +30,7 @@ qcf.FillM()                         # generates lists of indices of borders
 qcf.Symmetry(sym_type)                      # Depending on symmetry, choose which points to consider
 qcf.CreateQs()
     
-if savedflag == False:    
+if savedflag == False:   
     H,Hs = qcf.genMatrix3(sym_type)
     N = len(qcf.Q[0])
     sH = np.zeros((N,N))
@@ -55,37 +55,72 @@ if savedflag == False:
     if UseSparseMatrices == False:
         w, v = linalg.eigh(H)
     
-    np.savetxt('evectors_%s' %sym_type, v)
-    np.savetxt('evalues_%s' %sym_type, w)
+    np.savetxt('evectors_%s' %no_iterations, v)
+    np.savetxt('evalues_%s' %no_iterations, w)
 
 else:
-    v = np.loadtxt('evectors_%s' %sym_type)
-    w = np.loadtxt('evalues_%s' %sym_type)
+    v = np.loadtxt('evectors_%s' %no_iterations)
+    w = np.loadtxt('evalues_%s' %no_iterations)
+    
+
+# For 1 iterations   
+#E=[]
+#n = len(w)
+#X, Y = np.meshgrid(qcf.xt, qcf.yt)
+#for m in range(0,n):    
+#    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+#    z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
+#    e=(w[state_ind]/360)
+#    E.append(e)
+#    if m==0:
+#        qcf.plotContour(X,Y,z,m)
+#        qcf.plotDensity(X,Y,z,m)
+    
+#nt = np.linspace(0,n-1,n)
+#qcf.plotEnergies(n, nt, E)
+#
+#for i in range(1,9):
+#    polyN = np.poly1d(np.polyfit(E, nt, i))
+#    #qcf.plotN(E, polyN, nt)
+#    qcf.plotPolyN(nt, polyN, E, i)
+#    qcf.plotDelta(nt, polyN, E, i)
+#    
+## Delta-3 Statistic
+#delta3 = qcf.delta3(E, nt, polyN)
+#qcf.plotDelta3(delta3)
+
+# For all iterations
+V=[]    
+W=[]
+for i in range(0,no_iterations+1):
+    v = np.loadtxt('evectors_%s' %i)
+    w = np.loadtxt('evalues_%s' %i)
+    V.append(v)
+    W.append(w)
     
 E=[]
-n = qcf.c
 X, Y = np.meshgrid(qcf.xt, qcf.yt)
-for m in range(0,n):    
-    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-    z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
-    e=(w[state_ind]/360)
-    E.append(e)
-    #if m==0:
-    #qcf.plotContour(X,Y,z,m)
-    #qcf.plotDensity(X,Y,z,m)
-    
-nt = np.linspace(0,n-1,n)
-qcf.plotEnergies(n, nt, E)
+n=min(len(W[0]),len(W[1]),len(W[2]),len(W[3]))
+for i in range(0,no_iterations+1):
+    Etemp=[]
+    w=W[i]
+    for m in range(0,n):    
+        state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+        e=(w[state_ind]/360)
+        Etemp.append(e)
+    E.append(Etemp)
 
-for i in range(1,2):
-    polyN = np.poly1d(np.polyfit(E, nt, i))
-    #qcf.plotN(E, polyN, nt)
-    qcf.plotPolyN(nt, polyN, E, i)
-    qcf.plotDelta(nt, polyN, E, sym_type, i)
-    
-# Delta-3 Statistic
-delta3 = qcf.delta3(E, nt, polyN)
-qcf.plotDelta3(delta3)
+
+nt = np.linspace(0,n-1,n)
+qcf.plotAllEnergies(nt, E)
+polyN=[]
+for  i in range(0,no_iterations+1):
+    polyN.append(np.poly1d(np.polyfit(E[i], nt, 5)))
+qcf.plotAllN(E, polyN, nt)
+qcf.plotAllPolyN(nt, polyN, E)
+qcf.plotAllDelta(nt, polyN, E)
+delta3 = qcf.delta3All(E, nt, polyN)
+qcf.plotAllDelta3(delta3)
 
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
