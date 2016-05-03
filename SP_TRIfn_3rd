@@ -675,9 +675,9 @@ class QC:
         fig = plt.figure(figsize=(15,10))
         for i in range(0,self.iterations_label+1):
             plt.plot(nt, E[i], label='Energy %i' %i)
-        plt.xlabel('$n$',fontsize=40)
+        plt.xlabel('$Energy$ $level,$ $n$',fontsize=self.plottextsize+2)
         plt.tick_params(axis='x', labelsize=20)
-        plt.ylabel('$Energy$',fontsize=40)
+        plt.ylabel('$Energy$',fontsize=self.plottextsize+2)
         plt.tick_params(axis='y', labelsize=20)
         plt.legend(prop={'size':20},loc=2)
         plt.xlim(0,max(nt))
@@ -701,8 +701,8 @@ class QC:
         for i in range(0,self.iterations_label+1):
             plt.plot(nt, polyN[i](E[i])-nt, label='P%i'%i)
         #plt.plot(nt, nt, label='Perfect fit', linestyle='--')
-        plt.xlabel('$n$',fontsize=self.plottextsize+2)
-        plt.ylabel('$Polynomial fit$',fontsize=self.plottextsize+2)
+        plt.xlabel('$Energy$ $level,$ $n$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Fluctuations$',fontsize=self.plottextsize+2)
         #plt.ylim(0,max(nt))
         plt.xlim(0,max(nt))
         plt.legend()
@@ -719,7 +719,7 @@ class QC:
             for i in range(0,len(nt)-1):
                 delta.append(abs(PolyN[k](E[k][i+1])-PolyN[k](E[k][i])))
                 ntt.append(nt[i]-nt[0])
-            entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='step', normed=True, label='Delta %i'%k)
+            entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='step', normed=True, label='Delta %i'%k, color='w')
             x = 0.5*(bin_edges[1:] + bin_edges[:-1])
             y = entries
             xy=[]
@@ -746,7 +746,7 @@ class QC:
             cAll.append(c[1])
             c_errAll.append(c_err[1])
         plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
-        plt.xlabel('$s$',fontsize=self.plottextsize+2)
+        plt.xlabel('$Nearest$ $Neighbour$ $Energy$ $Spacing,$ $s$',fontsize=self.plottextsize+2)
         plt.xlim(0, 5)
         plt.legend()
         plt.show()
@@ -792,9 +792,19 @@ class QC:
         d.append(d3)
         for i in range(0,self.iterations_label+1):   
             plt.plot(L, d[i], label='Delta-3 %i'%i)
-        plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
+        plt.xlabel('$interval,$ $L$',fontsize=self.plottextsize+2)
         plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
         plt.xlim(1, max(L))
         plt.legend()
         plt.show()
         fig.savefig('Delta-3.png')
+        
+    def plotb(self, cAll, c_errAll):
+        fig = plt.figure(figsize=(15,10))
+        nt=np.linspace(1,self.iterations_label+1,self.iterations_label+1)
+        plt.errorbar(nt, cAll, yerr=c_errAll, fmt='x')
+        plt.xlim(0.9,4.1)
+        plt.xlabel('$Number$ $of$ $Iterations$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Brody$ $Parameter$',fontsize=self.plottextsize+2)
+        plt.show()
+        fig.savefig('Brody.png')
