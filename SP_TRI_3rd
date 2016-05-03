@@ -64,17 +64,17 @@ else:
     
 
 # For 1 iterations   
-#E=[]
-#n = len(w)
-#X, Y = np.meshgrid(qcf.xt, qcf.yt)
-#for m in range(0,n):    
-#    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-#    z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
-#    e=(w[state_ind]/360)
-#    E.append(e)
+E=[]
+n = len(w)
+X, Y = np.meshgrid(qcf.xt, qcf.yt)
+for m in range(0,1):    
+    state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+    z = qcf.arrayFromZ(v[:,state_ind], qcf.xt, qcf.yt)
+    e=(w[state_ind]/360)
+    E.append(e)
 #    if m==0:
-#        qcf.plotContour(X,Y,z,m)
-#        qcf.plotDensity(X,Y,z,m)
+    qcf.plotContour(X,Y,z,m)
+    qcf.plotDensity(X,Y,z,m)
     
 #nt = np.linspace(0,n-1,n)
 #qcf.plotEnergies(n, nt, E)
@@ -90,38 +90,38 @@ else:
 #qcf.plotDelta3(delta3)
 
 # For all iterations
-V=[]    
-W=[]
-for i in range(0,no_iterations+1):
-    v = np.loadtxt('evectors_%s' %i)
-    w = np.loadtxt('evalues_%s' %i)
-    V.append(v)
-    W.append(w)
-    
-E=[]
-X, Y = np.meshgrid(qcf.xt, qcf.yt)
-n=min(len(W[0]),len(W[1]),len(W[2]),len(W[3]))
-for i in range(0,no_iterations+1):
-    Etemp=[]
-    w=W[i]
-    for m in range(0,n):    
-        state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
-        e=(w[state_ind]/360)
-        Etemp.append(e)
-    E.append(Etemp)
-
-
-nt = np.linspace(0,n-1,n)
-qcf.plotAllEnergies(nt, E)
-polyN=[]
-for  i in range(0,no_iterations+1):
-    polyN.append(np.poly1d(np.polyfit(E[i], nt, 5)))
-qcf.plotAllN(E, polyN, nt)
-qcf.plotAllPolyN(nt, polyN, E)
-cAll, c_errAll = qcf.plotAllDelta(nt, polyN, E)
-delta3 = qcf.delta3All(E, nt, polyN)
-qcf.plotAllDelta3(delta3)
-qcf.plotb(cAll, c_errAll)
+#V=[]    
+#W=[]
+#for i in range(0,no_iterations+1):
+#    v = np.loadtxt('evectors_%s' %i)
+#    w = np.loadtxt('evalues_%s' %i)
+#    V.append(v)
+#    W.append(w)
+#    
+#E=[]
+#X, Y = np.meshgrid(qcf.xt, qcf.yt)
+#n=min(len(W[0]),len(W[1]),len(W[2]),len(W[3]))
+#for i in range(0,no_iterations+1):
+#    Etemp=[]
+#    w=W[i]
+#    for m in range(0,n):    
+#        state_ind = sorted(enumerate(w), key=lambda x: x[1])[m][0]
+#        e=(w[state_ind]/360)
+#        Etemp.append(e)
+#    E.append(Etemp)
+#
+#
+#nt = np.linspace(0,n-1,n)
+#qcf.plotAllEnergies(nt, E)
+#polyN=[]
+#for  i in range(0,no_iterations+1):
+#    polyN.append(np.poly1d(np.polyfit(E[i], nt, 5)))
+#qcf.plotAllN(E, polyN, nt)
+#qcf.plotAllPolyN(nt, polyN, E)
+#cAll, c_errAll = qcf.plotAllDelta(nt, polyN, E)
+#delta3 = qcf.delta3All(E, nt, polyN)
+#qcf.plotAllDelta3(delta3)
+#qcf.plotb(cAll, c_errAll)
 
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
