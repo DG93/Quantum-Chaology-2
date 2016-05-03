@@ -192,8 +192,6 @@ class QC:
                     else:
                         R[k] += 0
             M.append(R)
-        #np.savetxt('raw_matrix_%s' %sym_type, M)
-        #M = np.loadtxt('raw_matrix_%s' %sym_type)
         M = np.array(M, copy=False)
         
         # Set points in/thru boundaries to zero
@@ -338,7 +336,7 @@ class QC:
         # Create sparse matrix
         N = M.tolist()        
         N = sparse.csr_matrix(N)
-        np.savetxt('final_matrix_%s' %sym_type, M)
+        np.savetxt('final_matrix_%s' %self.iterations_label, M)
         return M,N
         
                     
@@ -565,7 +563,7 @@ class QC:
         plt.show()
         fig.savefig('Billiard_n_vs_polyn_%i.png' %num)
         
-    def plotDelta(self, nt, PolyN, E, sym_type, num):
+    def plotDelta(self, nt, PolyN, E, num):
         delta=[]
         ntt = []
         for i in range(0,len(nt)-1):
@@ -606,9 +604,9 @@ class QC:
         #plt.title('Delta histogram, %s iterations (3^%s) with %i order fit' %(self.iterations_label,self.m, num), fontsize=self.plottextsize+2)
         plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
         plt.xlabel('$s$',fontsize=self.plottextsize+2)
-        #plt.legend()
+        plt.legend()
         plt.show()
-        fig.savefig('nbar_hist_%i_%s_%s_%s.png' %(num, sym_type, self.r, self.iterations_label))
+        fig.savefig('nbar_hist_%i_%s_%s.png' %(num,  self.r, self.iterations_label))
 #        filename = 'Delta_plots/%s/parameters.txt' %sym_type
 #        par_file = open(filename, 'a')
 #        par_file.write('%i\t%i\t%f\t%f\t%f\n' %(self.r,self.c,c[0],c[1],c[2]))
@@ -654,7 +652,6 @@ class QC:
         fig = plt.figure(figsize=(15,15))
         plt.imshow(z, extent=(np.amin(X), np.amax(X), np.amin(Y), np.amax(Y)),
         cmap=cm.gist_rainbow)
-        #plt.title('Density plot for %ith energy' %m, fontsize=self.plottextsize+10)
         plt.xlabel('$x$',fontsize=self.plottextsize+12)
         plt.ylabel('$y$',fontsize=self.plottextsize+12)
         #plt.colorbar()
@@ -665,10 +662,139 @@ class QC:
         fig = plt.figure(figsize=(15,10))
         L = np.linspace(1, len(delta3), len(delta3))
         plt.plot(L, delta3, label='Delta-3')
-        #plt.title('Delta-3 vs L', fontsize=self.plottextsize+2)
         plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
         plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
         plt.xlim(0, max(L))
         #plt.legend()
+        plt.show()
+        fig.savefig('Delta-3.png')
+        
+    ############################# PLOTTING ALL #################################
+        
+    def plotAllEnergies(self, nt, E):
+        fig = plt.figure(figsize=(15,10))
+        for i in range(0,self.iterations_label+1):
+            plt.plot(nt, E[i], label='Energy %i' %i)
+        plt.xlabel('$n$',fontsize=40)
+        plt.tick_params(axis='x', labelsize=20)
+        plt.ylabel('$Energy$',fontsize=40)
+        plt.tick_params(axis='y', labelsize=20)
+        plt.legend(prop={'size':20},loc=2)
+        plt.xlim(0,max(nt))
+        plt.show()
+        fig.savefig('SP3TRI_E_vs_n_all.png') 
+        
+    def plotAllN(self, E,polyN, nt):
+        fig = plt.figure(figsize=(15,10))
+        for i in range(0,self.iterations_label+1):
+            plt.plot(polyN[i](E[i]), E[i], label='P%i'%i)
+            plt.plot(nt, E[i], label='N%i'%i, linestyle='--')
+        plt.xlabel('n',fontsize=self.plottextsize+2)
+        plt.ylabel('Energy',fontsize=self.plottextsize+2)
+        plt.xlim(0,max(nt))
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_E_all.png')
+        
+    def plotAllPolyN(self, nt, polyN, E):
+        fig = plt.figure(figsize=(15,10))
+        for i in range(0,self.iterations_label+1):
+            plt.plot(nt, polyN[i](E[i])-nt, label='P%i'%i)
+        #plt.plot(nt, nt, label='Perfect fit', linestyle='--')
+        plt.xlabel('$n$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Polynomial fit$',fontsize=self.plottextsize+2)
+        #plt.ylim(0,max(nt))
+        plt.xlim(0,max(nt))
+        plt.legend()
+        plt.show()
+        fig.savefig('Billiard_n_vs_polyn_all.png')
+        
+    def plotAllDelta(self, nt, PolyN, E):
+        fig = plt.figure(figsize=(15,10))
+        cAll=[]
+        c_errAll=[]
+        for k in range(0,self.iterations_label+1):
+            delta=[]
+            ntt = []
+            for i in range(0,len(nt)-1):
+                delta.append(abs(PolyN[k](E[k][i+1])-PolyN[k](E[k][i])))
+                ntt.append(nt[i]-nt[0])
+            entries, bin_edges, patches = plt.hist(delta, bins=20,  histtype='step', normed=True, label='Delta %i'%k)
+            x = 0.5*(bin_edges[1:] + bin_edges[:-1])
+            y = entries
+            xy=[]
+            xy.append(x)
+            xy.append(y)        
+            x = xy[0][xy[1]!=0]
+            y = xy[1][xy[1]!=0]
+            def fitfunc(x, *p):
+                return p[0]*(x**p[1])*np.exp(-(x**(p[1]+1))/p[2])
+            init = [1.2,0,1.2]
+            sigma_y = np.sqrt(y)  # Adding Poisson errors in y
+            popt, pcov  = curve_fit(fitfunc, x, y, p0=init, sigma=sigma_y, absolute_sigma=False)
+            c = popt
+            c_err = np.sqrt(np.diag(pcov))
+            print('Fit Coefficients: {}, {}, {}'.format(c[0],c[1],c[2]))
+            x_hd = np.linspace(0,bin_edges[-1],100)
+            x=x_hd
+            plt.plot(x, fitfunc(x, *c), label='b%i = %1.3f \u00B1 %1.3f' %(k, c[1], c_err[1]))
+            dn=[]
+            for i in range(0,len(nt)-1):
+                dn.append(PolyN[k](E[k][i+1])-PolyN[k](E[k][i]))
+            D = np.mean(dn)
+            print('Average nearest neighbour spacing, D: %f' %D)
+            cAll.append(c[1])
+            c_errAll.append(c_err[1])
+        plt.ylabel('$Frequency$',fontsize=self.plottextsize+2)
+        plt.xlabel('$s$',fontsize=self.plottextsize+2)
+        plt.xlim(0, 5)
+        plt.legend()
+        plt.show()
+        fig.savefig('nbar_hist_all.png')
+        return cAll, c_errAll
+        
+    def delta3All(self, redE, nt, redPolyN):
+        Delta3All=[]
+        for i in range(0,self.iterations_label+1):
+            a,b = np.polyfit(redE[i], nt, 1)
+            varDelta3 = []
+            l = len(redE[i])
+            for c in range(l//4, 3*l//4):
+                temp=[]
+                for L in range(1,l//4+1):
+                    r = redE[i][c-L:c+L]
+                    t=((nt[c-L:c+L] - redPolyN[i](redE[i][c-L:c+L]))**2)
+                    temp.append(scipy.integrate.simps(t, x=r)/L)
+                varDelta3.append(temp)
+            Delta3=np.sum(varDelta3, axis=0)
+            for j in range(0,len(Delta3)):
+                Delta3[j] = Delta3[j] / (len(varDelta3))
+            Delta3All.append(Delta3)
+        return Delta3All
+        
+    def plotAllDelta3(self, delta3):
+        fig = plt.figure(figsize=(15,10))
+        LL = min(len(delta3[0]),len(delta3[1]),len(delta3[2]),len(delta3[3]))
+        L = np.linspace(1, LL, LL)
+        d=[]
+        d0=[]
+        d1=[]
+        d2=[]
+        d3=[]
+        for i in range(0,LL):
+            d0.append(delta3[0][i])
+            d1.append(delta3[1][i])
+            d2.append(delta3[2][i])
+            d3.append(delta3[3][i])
+        d.append(d0)
+        d.append(d1)
+        d.append(d2)
+        d.append(d3)
+        for i in range(0,self.iterations_label+1):   
+            plt.plot(L, d[i], label='Delta-3 %i'%i)
+        plt.xlabel('$interval, L$',fontsize=self.plottextsize+2)
+        plt.ylabel('$Delta-3$',fontsize=self.plottextsize+2)
+        plt.xlim(1, max(L))
+        plt.legend()
         plt.show()
         fig.savefig('Delta-3.png')
