@@ -118,9 +118,10 @@ for  i in range(0,no_iterations+1):
     polyN.append(np.poly1d(np.polyfit(E[i], nt, 5)))
 qcf.plotAllN(E, polyN, nt)
 qcf.plotAllPolyN(nt, polyN, E)
-qcf.plotAllDelta(nt, polyN, E)
+cAll, c_errAll = qcf.plotAllDelta(nt, polyN, E)
 delta3 = qcf.delta3All(E, nt, polyN)
 qcf.plotAllDelta3(delta3)
+qcf.plotb(cAll, c_errAll)
 
 comp_time = (time.clock()-t0)/60.0
 print("Time taken: %f mins" %comp_time)
