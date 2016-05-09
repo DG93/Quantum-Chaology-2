@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+"""
+2D Sierpinski Carpet Propagation of Gaussian Wave Packet
+@author: Dan Goldsmith & Dan Locke
+"""
+import numpy as np
+np.set_printoptions(threshold=np.nan)
+import SP_propagate_fn as SPfn
+import time
+m=4
+a=10**-3
+z_all=[]
+hbar = 1.0545718*10**-34
+m_e = 9.10938356*10**-31
+scale_fact = (hbar**2/(2*m_e*a**2))/hbar
+t0 = time.clock()
+for no_iterations in range(0,4):
+    print("Propagating Gaussian for %i iterations..." %no_iterations)
+    UseSparseMatrices = False
+    qcf = SPfn.QC(m,a,no_iterations)      # create object
+    qcf.CreateMap()
+    #qcf.createEmap()
+    H = qcf.genMatrix(sparseflag=UseSparseMatrices)
+    #H = qcf.genMatrix3()
+    X, Y = np.meshgrid(qcf.xt, qcf.yt)
+    
+    #--------------------------------------# 
+    # PARAMETERS FOR GAUSSIAN AND PLOTTING #
+    #======================================#
+    no_timesteps=500
+    plotevery=20
+    p=0#100/hbar                      # ~0-100
+    dt=10000000#0.002                 # ~0.001-0.05
+    fwhm=0.5
+    center=[(3**m+1)//2,0]
+    #--------------------------------------#    
+    
+    wvfn = qcf.makeGaussian(p, fwhm, center)
+    zprop=[]
+    #scale=[1,1,0.8,0.6]
+    for s in range(0,no_timesteps+1):
+        if s > 0: wvfn = qcf.Propagate(wvfn, H, dt, scale_fact)
+        if s%plotevery==0:
+            print(s)
+            z = qcf.arrayFromZ(wvfn, qcf.xt, qcf.yt, s)
+            zprop.append(z.real)
+    z_all.append(zprop)
+comp_time = (time.clock()-t0)/60.0
+print("Time taken: %f mins" %comp_time)
+qcf.ContourAnim(X, Y, z_all, maxtime=no_timesteps//plotevery, timestep=dt*plotevery)
